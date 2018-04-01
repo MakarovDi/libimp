@@ -1,0 +1,24 @@
+#ifndef    IMP_VERSION_HEADER
+#   define IMP_VERSION_HEADER
+
+
+#include <cstdint>
+
+
+namespace imp
+{
+
+
+struct version
+{
+    static const uint8_t kMajor;
+    static const uint8_t kMinor;
+    static const uint8_t kRevision;
+    static const char*   kString;
+};
+
+
+}
+
+
+#endif
