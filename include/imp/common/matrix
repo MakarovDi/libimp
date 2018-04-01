@@ -22,7 +22,7 @@ enum MatrixMem
 template
 <
     typename T,
-    class index_tCheckPolicy = ex::policy::IndexCheckAssert<index_t>
+    class index_policy = ex::policy::IndexCheckAssert<index_t>
 >
 class Matrix
 {
@@ -65,28 +65,10 @@ public:
     }
 
 
-    template <index_t N>
-    Matrix(index_t cols, index_t rows, const T (&ptr)[N], MatrixMem mem_mode) :
-        m_rows(rows),
-        m_cols(cols),
-        m_size(rows*cols),
-        m_mem_size(m_size * sizeof(T)),
-        m_data( mem_mode == MatrixMem::kCopy ? new T[m_size] : nullptr),
-        m_ptr ( mem_mode == MatrixMem::kCopy ? m_data.get()  : const_cast<T*>(ptr) )
-    {
-        if (m_size > N)
-            throw std::logic_error("size mismatch");
-
-        if (mem_mode == MatrixMem::kCopy)
-        {
-            std::memcpy(m_ptr, ptr, size_t(m_mem_size));
-        }
-    }
-
-
     Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>& ptr) :
         Matrix(cols, rows, ptr.get(), MatrixMem::kCopy)
     {
+        // throw before memcpy if rows*cols > N
     }
 
 
@@ -109,6 +91,8 @@ public:
 
     Matrix(Matrix&& m) noexcept : Matrix(m.cols(), m.rows(), std::move(m.m_data))
     {
+        m_ptr = m.m_ptr;
+
         m.m_ptr  = nullptr;
         m.m_rows = m.m_cols = 0;
         m.m_size = m.m_mem_size = 0;
@@ -194,7 +178,7 @@ public:
 
     inline const T& item(index_t i) const
     {
-        index_tCheckPolicy::check(i, size()-1);
+        index_policy::check(i, size()-1);
 
         return m_ptr[i];
     }
@@ -202,7 +186,7 @@ public:
 
     inline T& item(index_t i)
     {
-        index_tCheckPolicy::check(i, size()-1);
+        index_policy::check(i, size()-1);
 
         return m_ptr[i];
     }
@@ -210,8 +194,8 @@ public:
 
     inline const T& item(index_t x, index_t y) const
     {
-        index_tCheckPolicy::check(x, cols()-1);
-        index_tCheckPolicy::check(y, rows()-1);
+        index_policy::check(x, cols()-1);
+        index_policy::check(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -229,8 +213,8 @@ public:
 
     inline T& item(index_t x, index_t y)
     {
-        index_tCheckPolicy::check(x, cols()-1);
-        index_tCheckPolicy::check(y, rows()-1);
+        index_policy::check(x, cols()-1);
+        index_policy::check(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
