@@ -57,7 +57,8 @@ set(SOURCES
 # Enumerate header files
 set(HEADERS
     include/imp/version
-    include/imp/common/matrix)
+    include/imp/common/matrix
+    include/imp/common/operator)
 
 
 # define and export library

@@ -297,5 +297,7 @@ private:
 };
 
 
+#include "imp/common/operator"
+
 }
 #endif // IMP_COMMON_MATRIX_HEADER

@@ -13,9 +13,8 @@ template <typename T> class MatrixOperatorTypeMixture: public ::testing::Test { 
 
 using MathTypes = Types
 <
-//        uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-//        float, double, long double
-    float
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+    float, double, long double
 >;
 
 TYPED_TEST_CASE(MatrixOperatorTypeMixture, MathTypes);
@@ -45,3 +44,40 @@ TYPED_TEST(MatrixOperatorTypeMixture, equality_operator)
     ASSERT_TRUE(m3 == m4);
 }
 
+
+TYPED_TEST(MatrixOperatorTypeMixture, sum_operator_ctor)
+{
+    Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
+                          { TypeParam(4), TypeParam(5), TypeParam(6) } });
+
+    Matrix<TypeParam> result({ { TypeParam(1+1), TypeParam(2+2), TypeParam(3+3) },
+                               { TypeParam(4+4), TypeParam(5+5), TypeParam(6+6) } });
+
+    Matrix<TypeParam> m2 = m;
+
+    m += m;
+    ASSERT_TRUE(m == result);
+    ASSERT_TRUE(m2 + m2 == result);
+
+    Matrix<TypeParam> m4(4, 4);
+    ASSERT_THROW(m4 += m, std::logic_error);
+}
+
+
+TYPED_TEST(MatrixOperatorTypeMixture, sub_operator_ctor)
+{
+    Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
+                          { TypeParam(4), TypeParam(5), TypeParam(6) } });
+
+    Matrix<TypeParam> result({ { TypeParam(1-1), TypeParam(2-2), TypeParam(3-3) },
+                               { TypeParam(4-4), TypeParam(5-5), TypeParam(6-6) } });
+
+    Matrix<TypeParam> m2 = m;
+
+    m -= m;
+    ASSERT_TRUE(m == result);
+    ASSERT_TRUE(m2 - m2 == result);
+
+    Matrix<TypeParam> m4(4, 4);
+    ASSERT_THROW(m4 -= m, std::logic_error);
+}
