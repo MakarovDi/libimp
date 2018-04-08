@@ -162,6 +162,33 @@ public:
     }
 
 
+    bool operator==(const Matrix& m) const
+    {
+        if (&m == this)
+            return true;
+
+        if (cols() != m.cols() || rows() != m.rows())
+            return false;
+
+        if (ptr() == m.ptr())
+            return true;
+
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            if (item(i) != m[i])
+                return false;
+        }
+
+        return true;
+    }
+
+
+    bool operator !=(const Matrix& m) const
+    {
+        return !operator==(m);
+    }
+
+
     Matrix& operator+=(const Matrix& m)
     {
         if (m.rows() != rows() || m.cols() != cols())

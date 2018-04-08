@@ -4,6 +4,7 @@ include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(ImpTests
     common/matrix.cpp
+    common/matrix_operator.cpp
 )
 
 
