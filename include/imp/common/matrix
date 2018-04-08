@@ -26,14 +26,12 @@ template
 >
 class Matrix
 {
+public:
     enum Config
     {
         kMemShrinkageScale = 4,
         kPrintedItemWidth  = 4,
     };
-
-public:
-
 
 public:
     virtual ~Matrix() = default;
@@ -68,16 +66,15 @@ public:
     Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>& ptr) :
         Matrix(cols, rows, ptr.get(), MatrixMem::kCopy)
     {
-        // throw before memcpy if rows*cols > N
     }
 
 
-    Matrix(index_t cols, index_t rows, std::unique_ptr<T[]>&& ptr) :
+    Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>&& ptr) :
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
         m_mem_size(m_size * sizeof(T)),
-        m_data(std::move(ptr)),
+        m_data(std::move(const_cast<std::unique_ptr<T[]>&>(ptr) )),
         m_ptr(m_data.get())
     {
     }
@@ -89,13 +86,16 @@ public:
     }
 
 
-    Matrix(Matrix&& m) noexcept : Matrix(m.cols(), m.rows(), std::move(m.m_data))
+    Matrix(const Matrix&& m) noexcept :
+        Matrix(m.cols(), m.rows(), std::move(m.m_data))
     {
         m_ptr = m.m_ptr;
 
-        m.m_ptr  = nullptr;
-        m.m_rows = m.m_cols = 0;
-        m.m_size = m.m_mem_size = 0;
+        Matrix& mx = const_cast<Matrix&>(m);
+
+        mx.m_ptr  = nullptr;
+        mx.m_rows = mx.m_cols = 0;
+        mx.m_size = mx.m_mem_size = 0;
     }
 
 public:
@@ -114,7 +114,7 @@ public:
         m_cols = m.cols();
         m_size = m.size();
 
-        std::memcpy(m_ptr, m.ptr(), m.size()* sizeof(T));
+        std::memcpy(m_ptr, m.ptr(), m_size*sizeof(T));
 
         return *this;
     }
@@ -147,7 +147,9 @@ public:
             throw std::logic_error("matrix dimension mismatch");
 
         for (index_t i = 0; i < m.size(); ++i)
+        {
             m_ptr[i] += m.item(i);
+        }
 
         return *this;
     }
@@ -159,7 +161,9 @@ public:
             throw std::logic_error("matrix dimension mismatch");
 
         for (index_t i = 0; i < m.size(); ++i)
+        {
             m_ptr[i] -= m.item(i);
+        }
 
         return *this;
     }
@@ -169,8 +173,8 @@ public:
     index_t cols() const { return m_cols; }
     index_t size() const { return m_size; }
 
-    index_t mem_size()    const { return m_mem_size;              }
-    bool  is_own_memory() const { return m_data.get() != nullptr; }
+    index_t mem_size()      const { return m_mem_size;              }
+    bool    is_own_memory() const { return m_data.get() != nullptr; }
 
     const T* ptr() const { return m_ptr; }
     T*       ptr()       { return m_ptr; }
