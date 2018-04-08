@@ -45,7 +45,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, equality_operator)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, sum_operator_ctor)
+TYPED_TEST(MatrixOperatorTypeMixture, sum_operator)
 {
     Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
                           { TypeParam(4), TypeParam(5), TypeParam(6) } });
@@ -64,7 +64,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, sum_operator_ctor)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, sub_operator_ctor)
+TYPED_TEST(MatrixOperatorTypeMixture, sub_operator)
 {
     Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
                           { TypeParam(4), TypeParam(5), TypeParam(6) } });
@@ -80,4 +80,30 @@ TYPED_TEST(MatrixOperatorTypeMixture, sub_operator_ctor)
 
     Matrix<TypeParam> m4(4, 4);
     ASSERT_THROW(m4 -= m, std::logic_error);
+}
+
+
+TYPED_TEST(MatrixOperatorTypeMixture, add_overflow_test)
+{
+    TypeParam max = std::numeric_limits<TypeParam>::max();
+
+    Matrix<TypeParam> m1({ max, max });
+    Matrix<TypeParam> m2({ TypeParam(2), TypeParam(2) });
+
+    Matrix<TypeParam> result({ TypeParam(TypeParam(2) + max), TypeParam(TypeParam(2) + max) });
+
+    ASSERT_TRUE(m1 + m2 == result);
+}
+
+
+TYPED_TEST(MatrixOperatorTypeMixture, sub_overflow_test)
+{
+    TypeParam min = std::numeric_limits<TypeParam>::min();
+
+    Matrix<TypeParam> m1({ min, min });
+    Matrix<TypeParam> m2({ TypeParam(2), TypeParam(2) });
+
+    Matrix<TypeParam> result({ TypeParam(min - TypeParam(2)), TypeParam(min - TypeParam(2)) });
+
+    ASSERT_TRUE(m1 - m2 == result);
 }
