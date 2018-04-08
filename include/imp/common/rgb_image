@@ -1,0 +1,124 @@
+#ifndef    IMP_COMMON_RGB_IMAGE_HEADER
+#   define IMP_COMMON_RGB_IMAGE_HEADER
+
+
+#include <memory>
+
+#include <ex/common/type>
+#include <ex/policy/index_check>
+
+#include "imp/common/matrix"
+
+
+namespace imp
+{
+
+enum ColorPlane : index_t
+{
+    kR = 0,
+    kG = 1,
+    kB = 2,
+    kCount,
+};
+
+
+template
+<
+    typename T,
+    class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>
+>
+class RgbImage final
+{
+    using Matrix = Matrix<T, IndexCheckPolicy>;
+public:
+
+    RgbImage(index_t width, index_t height) :
+        m_plane_size(width*height),
+        m_rgb(new T[3*m_plane_size]),
+        m_r(width, height, m_rgb.get(),                  MatrixMem::kReuse),
+        m_g(width, height, m_rgb.get() +   m_plane_size, MatrixMem::kReuse),
+        m_b(width, height, m_rgb.get() + 2*m_plane_size, MatrixMem::kReuse)
+    {
+    }
+
+
+    RgbImage(const RgbImage& rgb) : RgbImage(rgb.width(), rgb.height())
+    {
+        memcpy(m_rgb.get(), rgb.m_rgb.get(), 3*rgb.plane_size()*sizeof(T));
+    }
+
+
+    RgbImage& operator=(const RgbImage& rgb)
+    {
+        if (this == &rgb) return *this;
+
+        m_plane_size = rgb.m_plane_size;
+
+        if (width() != rgb.width() || height() != rgb.height())
+        {
+            m_rgb.reset(new T[3 * m_plane_size]);
+
+            m_r = Matrix(rgb.width(), rgb.height(), m_rgb.get());
+            m_g = Matrix(rgb.width(), rgb.height(), m_rgb.get() + m_plane_size);
+            m_b = Matrix(rgb.width(), rgb.height(), m_rgb.get() + 2*m_plane_size);
+        }
+
+        memcpy(m_rgb.get(), rgb.m_rgb.get(), 3*m_plane_size*sizeof(T));
+
+        return *this;
+    }
+
+
+    RgbImage(const RgbImage&& rgb) noexcept = default;
+    RgbImage& operator=(const RgbImage&& rgb) noexcept = default;
+
+public:
+    index_t width()      const { return m_r.cols();   }
+    index_t height()     const { return m_r.rows();   }
+    index_t plane_size() const { return m_plane_size; }
+
+    inline T  r(index_t index)        const { return m_r[index]; }
+    inline T& r(index_t index)              { return m_r[index]; }
+    inline T  r(index_t x, index_t y) const { return m_r(x, y);  }
+    inline T& r(index_t x, index_t y)       { return m_r(x, y);  }
+
+    inline T  g(index_t index)        const { return m_g[index]; }
+    inline T& g(index_t index)              { return m_g[index]; }
+    inline T  g(index_t x, index_t y) const { return m_g(x, y);  }
+    inline T& g(index_t x, index_t y)       { return m_g(x, y);  }
+
+    inline T  b(index_t index)        const { return m_b[index]; }
+    inline T& b(index_t index)              { return m_b[index]; }
+    inline T  b(index_t x, index_t y) const { return m_b(x, y);  }
+    inline T& b(index_t x, index_t y)       { return m_b(x, y);  }
+
+    inline T  color(index_t index,        ColorPlane color_plane) const { return m_rgb[index + color_plane*m_plane_size]; }
+    inline T& color(index_t index,        ColorPlane color_plane)       { return m_rgb[index + color_plane*m_plane_size]; }
+    inline T  color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane);       }
+    inline T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane);       }
+
+    const Matrix& r_plane() const { return m_r; }
+          Matrix& r_plane()       { return m_r; }
+
+    const Matrix& g_plane() const { return m_g; }
+          Matrix& g_plane()       { return m_g; }
+
+    const Matrix& b_plane() const { return m_b; }
+          Matrix& b_plane()       { return m_b; }
+
+    const T* ptr() const { return m_rgb.get(); }
+          T* ptr()       { return m_rgb.get(); }
+
+private:
+    index_t m_plane_size;
+
+    std::unique_ptr<T[]> m_rgb;
+
+    Matrix m_r;
+    Matrix m_g;
+    Matrix m_b;
+};
+
+
+}
+#endif
