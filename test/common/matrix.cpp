@@ -13,8 +13,9 @@ template <typename T> class MatrixTypeMixture: public ::testing::Test { };
 
 using MathTypes = Types
 <
-    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-    float, double, long double
+//    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+//    float, double, long double
+      float
 >;
 
 TYPED_TEST_CASE(MatrixTypeMixture, MathTypes);
@@ -386,6 +387,62 @@ TYPED_TEST(MatrixTypeMixture, move_operator)
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
     ASSERT_EQ(m3.mem_size(), 6 * sizeof(TypeParam));
+}
+
+
+TYPED_TEST(MatrixTypeMixture, from_array_ctor)
+{
+    Matrix<TypeParam> m(2, 3, { TypeParam(0), TypeParam(1), TypeParam(2),
+                                TypeParam(3), TypeParam(4), TypeParam(5) });
+
+    ASSERT_TRUE(m.is_own_memory());
+
+    ASSERT_EQ(m.rows(), 3);
+    ASSERT_EQ(m.cols(), 2);
+    ASSERT_EQ(m.size(), 3*2);
+    ASSERT_EQ(m.mem_size(), 3*2*sizeof(TypeParam));
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(i));
+    }
+}
+
+
+TYPED_TEST(MatrixTypeMixture, vector_ctor)
+{
+    Matrix<TypeParam> m({ TypeParam(0), TypeParam(1), TypeParam(2) });
+
+    ASSERT_TRUE(m.is_own_memory());
+
+    ASSERT_EQ(m.rows(), 3);
+    ASSERT_EQ(m.cols(), 1);
+    ASSERT_EQ(m.size(), 3*1);
+    ASSERT_EQ(m.mem_size(), 3*1*sizeof(TypeParam));
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(i));
+    }
+}
+
+
+TYPED_TEST(MatrixTypeMixture, matrix_array_ctor)
+{
+    Matrix<TypeParam> m({ { TypeParam(0), TypeParam(1), TypeParam(2) },
+                          { TypeParam(3), TypeParam(4), TypeParam(5) } });
+
+    ASSERT_TRUE(m.is_own_memory());
+
+    ASSERT_EQ(m.rows(), 2);
+    ASSERT_EQ(m.cols(), 3);
+    ASSERT_EQ(m.size(), 3*2);
+    ASSERT_EQ(m.mem_size(), 3*2*sizeof(TypeParam));
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(i));
+    }
 }
 
 

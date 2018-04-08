@@ -63,6 +63,27 @@ public:
     }
 
 
+    template <index_t N>
+    Matrix(index_t cols, index_t rows, const T (&ptr)[N]) :
+        Matrix(cols, rows, ptr, MatrixMem::kCopy)
+    {
+    }
+
+
+    template <index_t M>
+    Matrix(const T (&ptr)[M]) :
+        Matrix(1, M, ptr, MatrixMem::kCopy)
+    {
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix(const T (&ptr)[M][N]) :
+        Matrix(N, M, (T*)ptr, MatrixMem::kCopy)
+    {
+    }
+
+
     Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>& ptr) :
         Matrix(cols, rows, ptr.get(), MatrixMem::kCopy)
     {
