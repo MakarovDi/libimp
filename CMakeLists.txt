@@ -79,7 +79,7 @@ target_link_libraries(imp PUBLIC ex)
 
 
 # unit tests
-#if (BUILD_TESTS)
-#    add_subdirectory(test)
-#    message(STATUS "Test building enabled")
-#endif()
+if (BUILD_TESTS)
+    add_subdirectory(test)
+    message(STATUS "Test building enabled")
+endif()
