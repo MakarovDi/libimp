@@ -13,9 +13,8 @@ template <typename T> class MatrixTypeMixture: public ::testing::Test { };
 
 using MathTypes = Types
 <
-//    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-//    float, double, long double
-      float
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+    float, double, long double
 >;
 
 TYPED_TEST_CASE(MatrixTypeMixture, MathTypes);
@@ -467,4 +466,20 @@ TYPED_TEST(MatrixTypeMixture, indexing)
         }
 
     ASSERT_EQ(i, m.size());
+
+    i = 0;
+
+    for (index_t r = 0; r < m.rows(); ++r)
+        for (index_t c = 0; c < m.cols(); ++c)
+        {
+            m[i] = TypeParam(i);
+
+            ASSERT_EQ(m[i], TypeParam(i));
+            ASSERT_EQ(m(i), TypeParam(i));
+            ASSERT_EQ(m(c, r), TypeParam(i));
+            ASSERT_EQ(m.item(i), TypeParam(i));
+            ASSERT_EQ(m.item(c, r), TypeParam(i));
+
+            ++i;
+        }
 }
