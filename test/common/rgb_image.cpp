@@ -13,9 +13,8 @@ template <typename T> class RgbImageTypeMixture: public ::testing::Test { };
 
 using MathTypes = Types
 <
-//    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-//    float, double, long double
-    float
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+    float, double, long double
 >;
 
 TYPED_TEST_CASE(RgbImageTypeMixture, MathTypes);
@@ -268,18 +267,20 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
 
 TYPED_TEST(RgbImageTypeMixture, indexing_test)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
-
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
-
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
-
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
-
     using T = TypeParam;
+
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
+
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
+
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+
+
 
     index_t i = 0;
 
@@ -325,4 +326,61 @@ TYPED_TEST(RgbImageTypeMixture, indexing_test)
 
             ++i;
         }
+}
+
+
+TYPED_TEST(RgbImageTypeMixture, planes_test)
+{
+    using T = TypeParam;
+
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
+
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
+
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+
+
+    const Matrix<T> r_mx = img.r_plane();
+    const Matrix<T> g_mx = img.g_plane();
+    const Matrix<T> b_mx = img.b_plane();
+
+
+    const Matrix<T>& r1 = img.r_plane();
+          Matrix<T>  r2 = img.r_plane();
+
+    ASSERT_TRUE(r1.ptr() == r2.ptr());
+
+    Matrix<T> m(3, 3, ptr+4, MatrixMem::kCopy);
+
+    r2 = std::move(m);
+    ASSERT_TRUE(r2.ptr() != r1.ptr());
+    ASSERT_TRUE(r1 == r_mx);
+
+
+    const Matrix<T>& g1 = img.g_plane();
+          Matrix<T>  g2 = img.g_plane();
+
+    ASSERT_TRUE(g1.ptr() == g2.ptr());
+
+    m = Matrix<T>(3, 3, ptr+4, MatrixMem::kCopy);
+
+    g2 = std::move(m);
+    ASSERT_TRUE(g2.ptr() != g1.ptr());
+    ASSERT_TRUE(g1 == g_mx);
+
+    const Matrix<T>& b1 = img.b_plane();
+          Matrix<T>  b2 = img.b_plane();
+
+    ASSERT_TRUE(b1.ptr() == b2.ptr());
+
+    m = Matrix<T>(3, 3, ptr+4, MatrixMem::kCopy);
+
+    b2 = std::move(m);
+    ASSERT_TRUE(b2.ptr() != b1.ptr());
+    ASSERT_TRUE(b1 == b_mx);
 }
