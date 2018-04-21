@@ -4,8 +4,11 @@
 #include <memory>
 #include <iomanip>
 #include <cstring>
+#include <cmath>
 #include <ex/common/type>
 #include <ex/policy/index_check>
+#include <ex/meta/selector>
+#include <ex/meta/math_type>
 
 
 namespace imp
@@ -37,7 +40,7 @@ public:
     virtual ~Matrix() = default;
 
 
-    Matrix(index_t cols, index_t rows) :
+    explicit Matrix(index_t cols, index_t rows) :
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
@@ -48,7 +51,7 @@ public:
     }
 
 
-    Matrix(index_t cols, index_t rows, const T* ptr, MatrixMem mem_mode) :
+    explicit Matrix(index_t cols, index_t rows, const T* ptr, MatrixMem mem_mode) :
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
@@ -64,7 +67,7 @@ public:
 
 
     template <index_t N>
-    Matrix(index_t cols, index_t rows, const T (&ptr)[N]) :
+    explicit Matrix(index_t cols, index_t rows, const T (&ptr)[N]) :
         Matrix(cols, rows, ptr, MatrixMem::kCopy)
     {
     }
@@ -173,13 +176,7 @@ public:
         if (ptr() == m.ptr())
             return true;
 
-        for (index_t i = 0; i < m.size(); ++i)
-        {
-            if (item(i) != m[i])
-                return false;
-        }
-
-        return true;
+        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
     }
 
 
@@ -282,6 +279,40 @@ public:
 
             stream << std::endl;
         }
+    }
+
+private:
+
+    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kIntergral>) const
+    {
+        // integral type
+        return memcmp(m.ptr(), ptr(), m.size()* sizeof(T)) == 0;
+    }
+
+
+    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kFloating>) const
+    {
+        // floating type
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            if (std::fabs(m[i] - item(i)) > std::numeric_limits<T>::epsilon())
+                return false;
+        }
+
+        return true;
+    }
+
+
+    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kUserType>) const
+    {
+        // user type
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            if (m[i] != item(i))
+                return false;
+        }
+
+        return true;
     }
 
 private:
