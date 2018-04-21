@@ -82,7 +82,7 @@ public:
 
     template <index_t M, index_t N>
     Matrix(const T (&ptr)[M][N]) :
-        Matrix(N, M, (T*)ptr, MatrixMem::kCopy)
+        Matrix(N, M, reinterpret_cast<const T*>(ptr), MatrixMem::kCopy)
     {
     }
 

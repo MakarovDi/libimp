@@ -52,6 +52,13 @@ public:
     }
 
 
+    template <index_t M, index_t N>
+    RgbImage(const T (&ptr)[3][M][N]) :
+        RgbImage(N, M, reinterpret_cast<const T*>(ptr), MatrixMem::kCopy)
+    {
+    }
+
+
     RgbImage(const RgbImage& image) : RgbImage(image.width(), image.height())
     {
         m_data = image.m_data;

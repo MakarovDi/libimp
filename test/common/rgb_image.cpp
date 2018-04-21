@@ -109,6 +109,43 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
 }
 
 
+TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
+{
+    RgbImage<TypeParam> img({
+        {
+            { TypeParam(1), TypeParam(2), TypeParam(3) },
+            { TypeParam(4), TypeParam(5), TypeParam(6) }
+        },
+
+        {
+            { TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
+            { TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) }
+        },
+
+        {
+            { TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
+            { TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) }
+        }
+    });
+
+    ASSERT_TRUE(img.is_own_memory());
+    ASSERT_TRUE(img.width() == 3);
+    ASSERT_TRUE(img.height() == 2);
+
+    index_t i = 1;
+
+    for (index_t h = 0; h < img.height(); ++h)
+        for (index_t w = 0; w < img.width(); ++w)
+        {
+            ASSERT_TRUE(img.r(w, h) == TypeParam(i));
+            ASSERT_TRUE(img.g(w, h) == TypeParam(2*i));
+            ASSERT_TRUE(img.b(w, h) == TypeParam(3*i));
+
+            ++i;
+        }
+}
+
+
 TYPED_TEST(RgbImageTypeMixture, copy_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
@@ -265,7 +302,7 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, indexing_test)
+TYPED_TEST(RgbImageTypeMixture, indexing)
 {
     using T = TypeParam;
 
@@ -329,7 +366,7 @@ TYPED_TEST(RgbImageTypeMixture, indexing_test)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, planes_test)
+TYPED_TEST(RgbImageTypeMixture, planes)
 {
     using T = TypeParam;
 
@@ -386,7 +423,7 @@ TYPED_TEST(RgbImageTypeMixture, planes_test)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, equality_operator_test)
+TYPED_TEST(RgbImageTypeMixture, equality_operator)
 {
     using T = TypeParam;
 
