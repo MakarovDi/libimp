@@ -8,7 +8,7 @@ using namespace imp;
 using testing::Types;
 
 
-template <typename T> class MatrixOperatorTypeMixture: public ::testing::Test { };
+template <typename T> class MatrixOperatorTests: public ::testing::Test { };
 
 
 using MathTypes = Types
@@ -17,10 +17,10 @@ using MathTypes = Types
     float, double, long double
 >;
 
-TYPED_TEST_CASE(MatrixOperatorTypeMixture, MathTypes);
+TYPED_TEST_CASE(MatrixOperatorTests, MathTypes);
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, equality_operator)
+TYPED_TEST(MatrixOperatorTests, equality_operator)
 {
     using T = TypeParam;
 
@@ -55,7 +55,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, equality_operator)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, sum_operator)
+TYPED_TEST(MatrixOperatorTests, sum_operator)
 {
     Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
                           { TypeParam(4), TypeParam(5), TypeParam(6) } });
@@ -74,7 +74,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, sum_operator)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, sub_operator)
+TYPED_TEST(MatrixOperatorTests, sub_operator)
 {
     Matrix<TypeParam> m({ { TypeParam(1), TypeParam(2), TypeParam(3) },
                           { TypeParam(4), TypeParam(5), TypeParam(6) } });
@@ -93,7 +93,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, sub_operator)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, add_overflow_test)
+TYPED_TEST(MatrixOperatorTests, add_overflow_test)
 {
     TypeParam max = std::numeric_limits<TypeParam>::max();
 
@@ -106,7 +106,7 @@ TYPED_TEST(MatrixOperatorTypeMixture, add_overflow_test)
 }
 
 
-TYPED_TEST(MatrixOperatorTypeMixture, sub_overflow_test)
+TYPED_TEST(MatrixOperatorTests, sub_overflow_test)
 {
     TypeParam min = std::numeric_limits<TypeParam>::min();
 
