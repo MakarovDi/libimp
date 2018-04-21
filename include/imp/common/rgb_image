@@ -42,7 +42,7 @@ public:
     }
 
 
-    RgbImage(index_t width, index_t height, const T* ptr, MatrixMem mem_mode) :
+    explicit RgbImage(index_t width, index_t height, const T* ptr, MatrixMem mem_mode) :
         m_plane_size(width*height),
         m_data(3*m_plane_size, 1, ptr, mem_mode),
         m_r(width, height, m_data.ptr(),                  MatrixMem::kReuse),
@@ -79,6 +79,25 @@ public:
 
     RgbImage(RgbImage&& rgb) noexcept = default;
     RgbImage& operator=(RgbImage&& rgb) noexcept = default;
+
+
+public:
+
+    bool operator==(const RgbImage<T>& img) const
+    {
+        if (this == &img) return true;
+
+        if (width() != img.width() || height() != img.height())
+            return false;
+
+        if (ptr() == img.ptr())
+            return true;
+
+        return m_r == img.m_r && m_g == img.m_g && m_b == img.m_b;
+    }
+
+
+    bool operator!=(const RgbImage<T> img) const { return !operator==(img); }
 
 public:
     index_t width()      const { return m_r.cols();   }

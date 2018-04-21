@@ -384,3 +384,26 @@ TYPED_TEST(RgbImageTypeMixture, planes_test)
     ASSERT_TRUE(b2.ptr() != b1.ptr());
     ASSERT_TRUE(b1 == b_mx);
 }
+
+
+TYPED_TEST(RgbImageTypeMixture, equality_operator_test)
+{
+    using T = TypeParam;
+
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
+
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
+
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
+
+    RgbImage<T> img1(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img2(2, 3, ptr, MatrixMem::kReuse);
+    RgbImage<T> img3(3, 2, ptr, MatrixMem::kCopy);
+
+    ASSERT_TRUE(img1 != img2);
+    ASSERT_TRUE(img3 == img1);
+    ASSERT_TRUE(img1 == img1);
+}
