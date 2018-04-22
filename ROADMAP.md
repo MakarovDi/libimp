@@ -30,6 +30,7 @@
 	- [ ] XYZ <=> CAM02;
 	- [ ] RGB <=> HSL/HSV;
 	- [ ] RGB <=> Yuv;	
+	- [ ] 3 channel image generalization;
 
 * image filtering `filter`:
 	- [ ] box filter;
@@ -38,3 +39,11 @@
 	- [ ] min/max filter;
 	- [ ] bilateral filter;
 	- [ ] guided filter;
+	
+* raw image processing `imp/raw`:
+	- [ ] class for CFA;
+	- [ ] fuji X-Trans pattern;
+	- [ ] demosaic methods:
+		- [ ] bilinear;
+		- [ ] two-step demosaic: HA, bicubic;
+		- [ ] state-of-art;
