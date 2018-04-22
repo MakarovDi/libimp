@@ -43,25 +43,27 @@ TYPED_TEST(RgbImageTypeMixture, default_ctor)
 
 TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kCopy);
     ASSERT_TRUE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() != ptr);
 
@@ -77,25 +79,27 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
 
 TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
@@ -111,20 +115,22 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
 
 TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
 {
-    RgbImage<TypeParam> img({
+    using T = TypeParam;
+
+    RgbImage<T> img({
         {
-            { TypeParam(1), TypeParam(2), TypeParam(3) },
-            { TypeParam(4), TypeParam(5), TypeParam(6) }
+            { T(1), T(2), T(3) },
+            { T(4), T(5), T(6) }
         },
 
         {
-            { TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-            { TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) }
+            { T(2*1), T(2*2), T(2*3) },
+            { T(2*4), T(2*5), T(2*6) }
         },
 
         {
-            { TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-            { TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) }
+            { T(3*1), T(3*2), T(3*3) },
+            { T(3*4), T(3*5), T(3*6) }
         }
     });
 
@@ -137,9 +143,9 @@ TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
     for (index_t h = 0; h < img.height(); ++h)
         for (index_t w = 0; w < img.width(); ++w)
         {
-            ASSERT_TRUE(img.r(w, h) == TypeParam(i));
-            ASSERT_TRUE(img.g(w, h) == TypeParam(2*i));
-            ASSERT_TRUE(img.b(w, h) == TypeParam(3*i));
+            ASSERT_TRUE(img.r(w, h) == T(i));
+            ASSERT_TRUE(img.g(w, h) == T(2*i));
+            ASSERT_TRUE(img.b(w, h) == T(3*i));
 
             ++i;
         }
@@ -148,28 +154,30 @@ TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
 
 TYPED_TEST(RgbImageTypeMixture, copy_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
     ASSERT_FALSE(img.is_own_memory());
 
-    RgbImage<TypeParam> img2(img);
+    RgbImage<T> img2(img);
     ASSERT_TRUE(img2.is_own_memory());
     ASSERT_TRUE(img2.ptr() != img.ptr());
 
@@ -185,28 +193,30 @@ TYPED_TEST(RgbImageTypeMixture, copy_ctor)
 
 TYPED_TEST(RgbImageTypeMixture, copy_operator)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
     ASSERT_FALSE(img.is_own_memory());
 
-    RgbImage<TypeParam> img2(3, 3);
+    RgbImage<T> img2(3, 3);
 
     img2 = img;
     ASSERT_TRUE(img2.is_own_memory());
@@ -224,29 +234,31 @@ TYPED_TEST(RgbImageTypeMixture, copy_operator)
 
 TYPED_TEST(RgbImageTypeMixture, move_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
-    RgbImage<TypeParam> img2(std::move(img));
+    RgbImage<T> img2(std::move(img));
 
     ASSERT_TRUE(img2.ptr() == ptr);
     ASSERT_FALSE(img2.is_own_memory());
@@ -255,37 +267,37 @@ TYPED_TEST(RgbImageTypeMixture, move_ctor)
 
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.width(), 0);
-    ASSERT_EQ(img.height(), 0);
     ASSERT_EQ(img.mem_size(), 0);
 }
 
 
 TYPED_TEST(RgbImageTypeMixture, move_operator)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6),
+    using T = TypeParam;
 
-                        TypeParam(2*1), TypeParam(2*2), TypeParam(2*3),
-                        TypeParam(2*4), TypeParam(2*5), TypeParam(2*6),
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6),
 
-                        TypeParam(3*1), TypeParam(3*2), TypeParam(3*3),
-                        TypeParam(3*4), TypeParam(3*5), TypeParam(3*6)  };
+                T(2*1), T(2*2), T(2*3),
+                T(2*4), T(2*5), T(2*6),
 
-    Matrix<TypeParam> r({ {TypeParam(1), TypeParam(2), TypeParam(3) },
-                          {TypeParam(4), TypeParam(5), TypeParam(6) } });
+                T(3*1), T(3*2), T(3*3),
+                T(3*4), T(3*5), T(3*6)  };
 
-    Matrix<TypeParam> g({ {TypeParam(2*1), TypeParam(2*2), TypeParam(2*3) },
-                          {TypeParam(2*4), TypeParam(2*5), TypeParam(2*6) } });
+    Matrix<T> r({ {T(1), T(2), T(3) },
+                  {T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> b({ {TypeParam(3*1), TypeParam(3*2), TypeParam(3*3) },
-                          {TypeParam(3*4), TypeParam(3*5), TypeParam(3*6) } });
+    Matrix<T> g({ {T(2*1), T(2*2), T(2*3) },
+                  {T(2*4), T(2*5), T(2*6) } });
 
-    RgbImage<TypeParam> img(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
+                  {T(3*4), T(3*5), T(3*6) } });
+
+    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
-    RgbImage<TypeParam> img2(1, 1);
+    RgbImage<T> img2(1, 1);
 
     img2 = std::move(img);
 
@@ -296,8 +308,6 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
 
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.width(), 0);
-    ASSERT_EQ(img.height(), 0);
     ASSERT_EQ(img.mem_size(), 0);
 }
 
@@ -334,10 +344,10 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
             ASSERT_EQ(img.r(i), ptr[i]);
             ASSERT_EQ(img.r(i), img(i));
             ASSERT_EQ(img.r(i), img.r(c, r));
-            ASSERT_EQ(img.r(i), img(i, ColorPlane::kR));
-            ASSERT_EQ(img.r(i), img(c, r, ColorPlane::kR));
-            ASSERT_EQ(img.r(i), img.color(c, r, ColorPlane::kR));
-            ASSERT_EQ(img.r(i), img.color(i, ColorPlane::kR));
+            ASSERT_EQ(img.r(i), img(i, RgbImage<T>::ColorPlane::kR));
+            ASSERT_EQ(img.r(i), img(c, r, RgbImage<T>::ColorPlane::kR));
+            ASSERT_EQ(img.r(i), img.color(c, r, RgbImage<T>::ColorPlane::kR));
+            ASSERT_EQ(img.r(i), img.color(i, RgbImage<T>::ColorPlane::kR));
 
             img.g(c, r) = T(2*i);
 
@@ -345,10 +355,10 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
             ASSERT_EQ(img.g(i), ptr[i + img.plane_size()]);
             ASSERT_EQ(img.g(i), img(i + img.plane_size()));
             ASSERT_EQ(img.g(i), img.g(c, r));
-            ASSERT_EQ(img.g(i), img(i, ColorPlane::kG));
-            ASSERT_EQ(img.g(i), img(c, r, ColorPlane::kG));
-            ASSERT_EQ(img.g(i), img.color(c, r, ColorPlane::kG));
-            ASSERT_EQ(img.g(i), img.color(i, ColorPlane::kG));
+            ASSERT_EQ(img.g(i), img(i, RgbImage<T>::ColorPlane::kG));
+            ASSERT_EQ(img.g(i), img(c, r, RgbImage<T>::ColorPlane::kG));
+            ASSERT_EQ(img.g(i), img.color(c, r, RgbImage<T>::ColorPlane::kG));
+            ASSERT_EQ(img.g(i), img.color(i, RgbImage<T>::ColorPlane::kG));
 
             img.b(c, r) = T(3*i);
 
@@ -356,10 +366,10 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
             ASSERT_EQ(img.b(i), ptr[i + 2*img.plane_size()]);
             ASSERT_EQ(img.b(i), img(i + 2*img.plane_size()));
             ASSERT_EQ(img.b(i), img.b(c, r));
-            ASSERT_EQ(img.b(i), img(i, ColorPlane::kB));
-            ASSERT_EQ(img.b(i), img(c, r, ColorPlane::kB));
-            ASSERT_EQ(img.b(i), img.color(c, r, ColorPlane::kB));
-            ASSERT_EQ(img.b(i), img.color(i, ColorPlane::kB));
+            ASSERT_EQ(img.b(i), img(i, RgbImage<T>::ColorPlane::kB));
+            ASSERT_EQ(img.b(i), img(c, r, RgbImage<T>::ColorPlane::kB));
+            ASSERT_EQ(img.b(i), img.color(c, r, RgbImage<T>::ColorPlane::kB));
+            ASSERT_EQ(img.b(i), img.color(i, RgbImage<T>::ColorPlane::kB));
 
             ++i;
         }

@@ -2,23 +2,74 @@
 #   define IMP_COMMON_RGB_IMAGE_HEADER
 
 
-#include <memory>
-
 #include <ex/common/type>
 #include <ex/policy/index_check>
 
-#include "imp/common/matrix"
+#include "imp/common/image"
 
 
 namespace imp
 {
 
-enum ColorPlane : index_t
+
+template <typename T, typename IndexPolicy>
+struct RgbAliases
 {
-    kR = 0,
-    kG = 1,
-    kB = 2,
-    kCount,
+    using Image = Image<T, IndexPolicy, RgbAliases>;
+public:
+    enum ColorPlane : index_t
+    {
+        kR = 0,
+        kG = 1,
+        kB = 2,
+        kCount,
+    };
+
+
+    inline const T& r(index_t index)        const { return m_r_plane[index]; }
+    inline       T& r(index_t index)              { return m_r_plane[index]; }
+    inline const T& r(index_t x, index_t y) const { return m_r_plane(x, y);  }
+    inline       T& r(index_t x, index_t y)       { return m_r_plane(x, y);  }
+
+    inline const T& g(index_t index)        const { return m_g_plane[index]; }
+    inline       T& g(index_t index)              { return m_g_plane[index]; }
+    inline const T& g(index_t x, index_t y) const { return m_g_plane(x, y);  }
+    inline       T& g(index_t x, index_t y)       { return m_g_plane(x, y);  }
+
+    inline const T& b(index_t index)        const { return m_b_plane[index]; }
+    inline       T& b(index_t index)              { return m_b_plane[index]; }
+    inline const T& b(index_t x, index_t y) const { return m_b_plane(x, y);  }
+    inline       T& b(index_t x, index_t y)       { return m_b_plane(x, y);  }
+
+    const Matrix<T>& r_plane() const { return m_r_plane; }
+          Matrix<T>  r_plane()       { return Matrix<T>(m_r_plane.cols(), m_r_plane.rows(), m_r_plane.ptr(), MatrixMem::kReuse); }
+
+    const Matrix<T>& g_plane() const { return m_g_plane; }
+          Matrix<T>  g_plane()       { return Matrix<T>(m_g_plane.cols(), m_g_plane.rows(), m_g_plane.ptr(), MatrixMem::kReuse); }
+
+    const Matrix<T>& b_plane() const { return m_b_plane; }
+          Matrix<T>  b_plane()       { return Matrix<T>(m_b_plane.cols(), m_b_plane.rows(), m_b_plane.ptr(), MatrixMem::kReuse); }
+
+
+    RgbAliases(RgbAliases&&) noexcept = default;
+    RgbAliases& operator=(RgbAliases&&) noexcept = default;
+
+protected:
+    RgbAliases()  { }
+    ~RgbAliases() { } // non-virtual destructor
+
+protected:
+    void init_aliases(Image& img)
+    {
+        m_r_plane = Matrix<T>(img.width(), img.height(), img.ptr(),                      MatrixMem::kReuse);
+        m_g_plane = Matrix<T>(img.width(), img.height(), img.ptr() + img.plane_size(),   MatrixMem::kReuse);
+        m_b_plane = Matrix<T>(img.width(), img.height(), img.ptr() + 2*img.plane_size(), MatrixMem::kReuse);
+    }
+
+private:
+    Matrix<T> m_r_plane;
+    Matrix<T> m_g_plane;
+    Matrix<T> m_b_plane;
 };
 
 
@@ -27,144 +78,7 @@ template
     typename T,
     class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>
 >
-class RgbImage final
-{
-    using Matrix = Matrix<T, IndexCheckPolicy>;
-public:
-
-    RgbImage(index_t width, index_t height) :
-        m_plane_size(width*height),
-        m_data(3*m_plane_size, 1),
-        m_r(width, height, m_data.ptr(),                  MatrixMem::kReuse),
-        m_g(width, height, m_data.ptr() +   m_plane_size, MatrixMem::kReuse),
-        m_b(width, height, m_data.ptr() + 2*m_plane_size, MatrixMem::kReuse)
-    {
-    }
-
-
-    explicit RgbImage(index_t width, index_t height, const T* ptr, MatrixMem mem_mode) :
-        m_plane_size(width*height),
-        m_data(3*m_plane_size, 1, ptr, mem_mode),
-        m_r(width, height, m_data.ptr(),                  MatrixMem::kReuse),
-        m_g(width, height, m_data.ptr() +   m_plane_size, MatrixMem::kReuse),
-        m_b(width, height, m_data.ptr() + 2*m_plane_size, MatrixMem::kReuse)
-    {
-    }
-
-
-    template <index_t M, index_t N>
-    RgbImage(const T (&ptr)[3][M][N]) :
-        RgbImage(N, M, reinterpret_cast<const T*>(ptr), MatrixMem::kCopy)
-    {
-    }
-
-
-    RgbImage(const RgbImage& image) : RgbImage(image.width(), image.height())
-    {
-        m_data = image.m_data;
-    }
-
-
-    RgbImage& operator=(const RgbImage& rgb)
-    {
-        if (this == &rgb) return *this;
-
-        m_plane_size = rgb.m_plane_size;
-
-        m_data = rgb.m_data;
-
-        if (width() != rgb.width() || height() != rgb.height())
-        {
-            m_r = Matrix(rgb.width(), rgb.height(), m_data.ptr(),                  MatrixMem::kReuse);
-            m_g = Matrix(rgb.width(), rgb.height(), m_data.ptr() + m_plane_size,   MatrixMem::kReuse);
-            m_b = Matrix(rgb.width(), rgb.height(), m_data.ptr() + 2*m_plane_size, MatrixMem::kReuse);
-        }
-
-        return *this;
-    }
-
-
-    RgbImage(RgbImage&& rgb) noexcept = default;
-    RgbImage& operator=(RgbImage&& rgb) noexcept = default;
-
-
-public:
-
-    bool operator==(const RgbImage<T>& img) const
-    {
-        if (this == &img) return true;
-
-        if (width() != img.width() || height() != img.height())
-            return false;
-
-        if (ptr() == img.ptr())
-            return true;
-
-        return m_r == img.m_r && m_g == img.m_g && m_b == img.m_b;
-    }
-
-
-    bool operator!=(const RgbImage<T> img) const { return !operator==(img); }
-
-public:
-    index_t width()      const { return m_r.cols();   }
-    index_t height()     const { return m_r.rows();   }
-    index_t plane_size() const { return m_plane_size; }
-
-    inline const T& r(index_t index)        const { return m_r[index]; }
-    inline       T& r(index_t index)              { return m_r[index]; }
-    inline const T& r(index_t x, index_t y) const { return m_r(x, y);  }
-    inline       T& r(index_t x, index_t y)       { return m_r(x, y);  }
-
-    inline const T& g(index_t index)        const { return m_g[index]; }
-    inline       T& g(index_t index)              { return m_g[index]; }
-    inline const T& g(index_t x, index_t y) const { return m_g(x, y);  }
-    inline       T& g(index_t x, index_t y)       { return m_g(x, y);  }
-
-    inline const T& b(index_t index)        const { return m_b[index]; }
-    inline       T& b(index_t index)              { return m_b[index]; }
-    inline const T& b(index_t x, index_t y) const { return m_b(x, y);  }
-    inline       T& b(index_t x, index_t y)       { return m_b(x, y);  }
-
-    inline const T& color(index_t index,        ColorPlane color_plane) const { return m_data[index + color_plane*m_plane_size]; }
-    inline       T& color(index_t index,        ColorPlane color_plane)       { return m_data[index + color_plane*m_plane_size]; }
-    inline const T& color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane);        }
-    inline       T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane);        }
-
-    inline const T& operator()(index_t index,        ColorPlane color_plane) const { return color(index, color_plane); }
-    inline       T& operator()(index_t index,        ColorPlane color_plane)       { return color(index, color_plane); }
-    inline const T& operator()(index_t x, index_t y, ColorPlane color_plane) const { return color(x, y, color_plane);  }
-    inline       T& operator()(index_t x, index_t y, ColorPlane color_plane)       { return color(x, y, color_plane);  }
-
-    inline const T& operator()(index_t index) const { return m_data[index]; }
-    inline       T& operator()(index_t index)       { return m_data[index]; }
-    inline const T& operator[](index_t index) const { return m_data[index]; }
-    inline       T& operator[](index_t index)       { return m_data[index]; }
-
-    const Matrix& r_plane() const { return m_r; }
-          Matrix  r_plane()       { return Matrix(width(), height(), m_r.ptr(), MatrixMem::kReuse); }
-
-    const Matrix& g_plane() const { return m_g; }
-          Matrix  g_plane()       { return Matrix(width(), height(), m_g.ptr(), MatrixMem::kReuse); }
-
-    const Matrix& b_plane() const { return m_b; }
-          Matrix  b_plane()       { return Matrix(width(), height(), m_b.ptr(), MatrixMem::kReuse); }
-
-    const T* ptr() const { return m_data.ptr(); }
-          T* ptr()       { return m_data.ptr(); }
-
-    index_t mem_size()      const { return m_data.mem_size();      }
-    bool    is_own_memory() const { return m_data.is_own_memory(); }
-
-private:
-    index_t m_plane_size;
-
-    Matrix m_data;
-
-    Matrix m_r;
-    Matrix m_g;
-    Matrix m_b;
-};
+using RgbImage = Image<T, IndexCheckPolicy, RgbAliases>;
 
 
 }
