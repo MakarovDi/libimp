@@ -30,7 +30,7 @@
 	- [ ] XYZ <=> CAM02;
 	- [ ] RGB <=> HSL/HSV;
 	- [ ] RGB <=> Yuv;	
-	- [ ] 3 channel image generalization;
+	- [x] 3 channel image generalization;
 
 * image filtering `filter`:
 	- [ ] box filter;
