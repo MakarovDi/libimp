@@ -12,18 +12,21 @@ namespace imp
 {
 
 
-template <typename T, typename IndexPolicy>
+template <class T, class IndexPolicy>
 struct NoAliases;
 
 
+// TODO: change [class PlaneAliases = NoAliases<T, IndexCheckPolicy>] -> [template <class, class> class PlaneAliases = NoAliases]
+// TODO: when msvc grow up to it. msvc 2015 can't trace it
+
 template
 <
-    typename T,
+    class T,
 
     class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>,
-    template <class, class> class PlaneAliases = NoAliases
+    class PlaneAliases = NoAliases<T, IndexCheckPolicy>
 >
-class Image final : public PlaneAliases<T, IndexCheckPolicy>
+class Image final : public PlaneAliases
 {
     using Matrix = Matrix<T, IndexCheckPolicy>;
 public:
@@ -120,7 +123,7 @@ public:
     bool     is_own_memory() const { return m_data.is_own_memory(); }
 
 public:
-    using ColorPlane = typename PlaneAliases<T, IndexCheckPolicy>::ColorPlane;
+    using ColorPlane = typename PlaneAliases::ColorPlane;
 
     inline const T& color(index_t index,        ColorPlane color_plane) const { return m_data[index + color_plane*m_plane_size]; }
     inline       T& color(index_t index,        ColorPlane color_plane)       { return m_data[index + color_plane*m_plane_size]; }
@@ -147,7 +150,7 @@ private:
 
 
 
-template <typename T, typename IndexPolicy>
+template <class T, class IndexPolicy>
 struct NoAliases
 {
     using Image = Image<T, IndexPolicy, NoAliases>;

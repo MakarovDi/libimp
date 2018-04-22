@@ -78,7 +78,7 @@ template
     typename T,
     class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>
 >
-using RgbImage = Image<T, IndexCheckPolicy, RgbAliases>;
+using RgbImage = Image<T, IndexCheckPolicy, RgbAliases<T, IndexCheckPolicy>>;
 
 
 }
