@@ -58,7 +58,9 @@ set(SOURCES
 set(HEADERS
     include/imp/version
     include/imp/common/matrix
-    include/imp/common/operator)
+    include/imp/common/operator
+    include/imp/common/rgb_image
+    include/imp/common/image)
 
 
 # define and export library

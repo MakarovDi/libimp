@@ -1,0 +1,85 @@
+#ifndef    IMP_COMMON_RGB_IMAGE_HEADER
+#   define IMP_COMMON_RGB_IMAGE_HEADER
+
+
+#include <ex/common/type>
+#include <ex/policy/index_check>
+
+#include "imp/common/image"
+
+
+namespace imp
+{
+
+
+template <typename T, typename IndexPolicy>
+struct RgbAliases
+{
+    using Image = Image<T, IndexPolicy, RgbAliases>;
+public:
+    enum ColorPlane : index_t
+    {
+        kR = 0,
+        kG = 1,
+        kB = 2,
+        kCount,
+    };
+
+
+    inline const T& r(index_t index)        const { return m_r_plane[index]; }
+    inline       T& r(index_t index)              { return m_r_plane[index]; }
+    inline const T& r(index_t x, index_t y) const { return m_r_plane(x, y);  }
+    inline       T& r(index_t x, index_t y)       { return m_r_plane(x, y);  }
+
+    inline const T& g(index_t index)        const { return m_g_plane[index]; }
+    inline       T& g(index_t index)              { return m_g_plane[index]; }
+    inline const T& g(index_t x, index_t y) const { return m_g_plane(x, y);  }
+    inline       T& g(index_t x, index_t y)       { return m_g_plane(x, y);  }
+
+    inline const T& b(index_t index)        const { return m_b_plane[index]; }
+    inline       T& b(index_t index)              { return m_b_plane[index]; }
+    inline const T& b(index_t x, index_t y) const { return m_b_plane(x, y);  }
+    inline       T& b(index_t x, index_t y)       { return m_b_plane(x, y);  }
+
+    const Matrix<T>& r_plane() const { return m_r_plane; }
+          Matrix<T>  r_plane()       { return Matrix<T>(m_r_plane.cols(), m_r_plane.rows(), m_r_plane.ptr(), MatrixMem::kReuse); }
+
+    const Matrix<T>& g_plane() const { return m_g_plane; }
+          Matrix<T>  g_plane()       { return Matrix<T>(m_g_plane.cols(), m_g_plane.rows(), m_g_plane.ptr(), MatrixMem::kReuse); }
+
+    const Matrix<T>& b_plane() const { return m_b_plane; }
+          Matrix<T>  b_plane()       { return Matrix<T>(m_b_plane.cols(), m_b_plane.rows(), m_b_plane.ptr(), MatrixMem::kReuse); }
+
+
+    RgbAliases(RgbAliases&&) noexcept = default;
+    RgbAliases& operator=(RgbAliases&&) noexcept = default;
+
+protected:
+    RgbAliases()  { }
+    ~RgbAliases() { } // non-virtual destructor
+
+protected:
+    void init_aliases(Image& img)
+    {
+        m_r_plane = Matrix<T>(img.width(), img.height(), img.ptr(),                      MatrixMem::kReuse);
+        m_g_plane = Matrix<T>(img.width(), img.height(), img.ptr() + img.plane_size(),   MatrixMem::kReuse);
+        m_b_plane = Matrix<T>(img.width(), img.height(), img.ptr() + 2*img.plane_size(), MatrixMem::kReuse);
+    }
+
+private:
+    Matrix<T> m_r_plane;
+    Matrix<T> m_g_plane;
+    Matrix<T> m_b_plane;
+};
+
+
+template
+<
+    typename T,
+    class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>
+>
+using RgbImage = Image<T, IndexCheckPolicy, RgbAliases<T, IndexCheckPolicy>>;
+
+
+}
+#endif

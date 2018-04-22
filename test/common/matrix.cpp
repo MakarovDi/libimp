@@ -8,20 +8,19 @@ using namespace imp;
 using testing::Types;
 
 
-template <typename T> class MatrixTypeMixture: public ::testing::Test { };
+template <typename T> class MatrixTests: public ::testing::Test { };
 
 
 using MathTypes = Types
 <
-//    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-//    float, double, long double
-      float
+    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+    float, double, long double
 >;
 
-TYPED_TEST_CASE(MatrixTypeMixture, MathTypes);
+TYPED_TEST_CASE(MatrixTests, MathTypes);
 
 
-TYPED_TEST(MatrixTypeMixture, default_ctor)
+TYPED_TEST(MatrixTests, default_ctor)
 {
     Matrix<TypeParam> m(2, 3);
     ASSERT_TRUE(m.is_own_memory());
@@ -33,7 +32,7 @@ TYPED_TEST(MatrixTypeMixture, default_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, raw_ptr_copy_ctor)
+TYPED_TEST(MatrixTests, raw_ptr_copy_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -52,7 +51,7 @@ TYPED_TEST(MatrixTypeMixture, raw_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, raw_ptr_reuse_ctor)
+TYPED_TEST(MatrixTests, raw_ptr_reuse_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -70,7 +69,7 @@ TYPED_TEST(MatrixTypeMixture, raw_ptr_reuse_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, const_raw_ptr_copy_ctor)
+TYPED_TEST(MatrixTests, const_raw_ptr_copy_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -91,7 +90,7 @@ TYPED_TEST(MatrixTypeMixture, const_raw_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, const_raw_ptr_reuse_ctor)
+TYPED_TEST(MatrixTests, const_raw_ptr_reuse_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -111,7 +110,7 @@ TYPED_TEST(MatrixTypeMixture, const_raw_ptr_reuse_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, unique_ptr_copy_ctor)
+TYPED_TEST(MatrixTests, unique_ptr_copy_ctor)
 {
     std::unique_ptr<TypeParam[]> ptr(new TypeParam[3]);
 
@@ -131,7 +130,7 @@ TYPED_TEST(MatrixTypeMixture, unique_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, unique_ptr_move_ctor)
+TYPED_TEST(MatrixTests, unique_ptr_move_ctor)
 {
     std::unique_ptr<TypeParam[]> ptr(new TypeParam[3]);
 
@@ -155,7 +154,7 @@ TYPED_TEST(MatrixTypeMixture, unique_ptr_move_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, copy_ctor)
+TYPED_TEST(MatrixTests, copy_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -195,7 +194,7 @@ TYPED_TEST(MatrixTypeMixture, copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, copy_operator)
+TYPED_TEST(MatrixTests, copy_operator)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -242,7 +241,7 @@ TYPED_TEST(MatrixTypeMixture, copy_operator)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, mem_shrinkage_test)
+TYPED_TEST(MatrixTests, mem_shrinkage_test)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -267,7 +266,7 @@ TYPED_TEST(MatrixTypeMixture, mem_shrinkage_test)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, move_ctor)
+TYPED_TEST(MatrixTests, move_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -314,7 +313,7 @@ TYPED_TEST(MatrixTypeMixture, move_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, move_rvalue_ctor)
+TYPED_TEST(MatrixTests, move_rvalue_ctor)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -337,7 +336,7 @@ TYPED_TEST(MatrixTypeMixture, move_rvalue_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, move_operator)
+TYPED_TEST(MatrixTests, move_operator)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -390,7 +389,7 @@ TYPED_TEST(MatrixTypeMixture, move_operator)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, from_array_ctor)
+TYPED_TEST(MatrixTests, from_array_ctor)
 {
     Matrix<TypeParam> m(2, 3, { TypeParam(0), TypeParam(1), TypeParam(2),
                                 TypeParam(3), TypeParam(4), TypeParam(5) });
@@ -409,7 +408,7 @@ TYPED_TEST(MatrixTypeMixture, from_array_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, vector_ctor)
+TYPED_TEST(MatrixTests, vector_ctor)
 {
     Matrix<TypeParam> m({ TypeParam(0), TypeParam(1), TypeParam(2) });
 
@@ -427,7 +426,7 @@ TYPED_TEST(MatrixTypeMixture, vector_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, matrix_array_ctor)
+TYPED_TEST(MatrixTests, matrix_array_ctor)
 {
     Matrix<TypeParam> m({ { TypeParam(0), TypeParam(1), TypeParam(2) },
                           { TypeParam(3), TypeParam(4), TypeParam(5) } });
@@ -446,7 +445,7 @@ TYPED_TEST(MatrixTypeMixture, matrix_array_ctor)
 }
 
 
-TYPED_TEST(MatrixTypeMixture, indexing)
+TYPED_TEST(MatrixTests, indexing)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
@@ -467,4 +466,20 @@ TYPED_TEST(MatrixTypeMixture, indexing)
         }
 
     ASSERT_EQ(i, m.size());
+
+    i = 0;
+
+    for (index_t r = 0; r < m.rows(); ++r)
+        for (index_t c = 0; c < m.cols(); ++c)
+        {
+            m[i] = TypeParam(i);
+
+            ASSERT_EQ(m[i], TypeParam(i));
+            ASSERT_EQ(m(i), TypeParam(i));
+            ASSERT_EQ(m(c, r), TypeParam(i));
+            ASSERT_EQ(m.item(i), TypeParam(i));
+            ASSERT_EQ(m.item(c, r), TypeParam(i));
+
+            ++i;
+        }
 }
