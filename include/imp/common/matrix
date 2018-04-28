@@ -5,8 +5,10 @@
 #include <iomanip>
 #include <cstring>
 #include <cmath>
+
+#include <ex/range_check>
 #include <ex/common/type>
-#include <ex/policy/index_check>
+#include <ex/policy/notice>
 #include <ex/meta/selector>
 #include <ex/meta/math_type>
 
@@ -25,7 +27,7 @@ enum MatrixMem
 template
 <
     typename T,
-    class index_policy = ex::policy::IndexCheckAssert<index_t>
+    class ErrorNotice = ex::policy::AssertNotice
 >
 class Matrix
 {
@@ -238,7 +240,7 @@ public:
 
     inline const T& item(index_t i) const
     {
-        index_policy::check(i, size()-1);
+        ex::range_check<ErrorNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -246,7 +248,7 @@ public:
 
     inline T& item(index_t i)
     {
-        index_policy::check(i, size()-1);
+        ex::range_check<ErrorNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -254,8 +256,8 @@ public:
 
     inline const T& item(index_t x, index_t y) const
     {
-        index_policy::check(x, cols()-1);
-        index_policy::check(y, rows()-1);
+        ex::range_check<ErrorNotice>(x, cols()-1);
+        ex::range_check<ErrorNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -273,8 +275,8 @@ public:
 
     inline T& item(index_t x, index_t y)
     {
-        index_policy::check(x, cols()-1);
-        index_policy::check(y, rows()-1);
+        ex::range_check<ErrorNotice>(x, cols()-1);
+        ex::range_check<ErrorNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }

@@ -3,7 +3,6 @@
 
 
 #include <ex/common/type>
-#include <ex/policy/index_check>
 
 #include "imp/common/image"
 
@@ -12,10 +11,10 @@ namespace imp
 {
 
 
-template <typename T, typename IndexPolicy>
+template <typename T, typename NoticePolicy>
 struct RgbAliases
 {
-    using Image = Image<T, IndexPolicy, RgbAliases>;
+    using Image = Image<T, NoticePolicy, RgbAliases>;
 public:
     enum ColorPlane : index_t
     {
@@ -76,9 +75,9 @@ private:
 template
 <
     typename T,
-    class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>
+    class ErrorNotice = ex::policy::AssertNotice
 >
-using RgbImage = Image<T, IndexCheckPolicy, RgbAliases<T, IndexCheckPolicy>>;
+using RgbImage = Image<T, ErrorNotice, RgbAliases<T, ErrorNotice>>;
 
 
 }
