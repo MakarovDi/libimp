@@ -136,6 +136,43 @@ public:
     }
 
 public:
+    Matrix& assign(const Matrix& m)
+    {
+        if (this == &m) return *this;
+
+        if (cols() != m.cols() || rows() != m.rows())
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(m.ptr(), size());
+
+        return *this;
+    }
+
+
+    template <index_t M>
+    Matrix& assign(const T (&ptr)[M])
+    {
+        if (size() != M)
+            throw std::logic_error("matrix size != array size");
+
+        assing_items(ptr, size());
+
+        return *this;
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix& assign(const T (&ptr)[M][N])
+    {
+        if (cols() != N || rows() != M)
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(reinterpret_cast<const T*>(ptr), size());
+
+        return *this;
+    }
+
+
     Matrix& operator=(const Matrix& m)
     {
         if (this == &m) return *this;
@@ -295,6 +332,27 @@ public:
     }
 
 private:
+
+    void assing_items(const T* items, index_t count)
+    {
+        assing_items(items, count, ex::BoolSelector<std::is_fundamental<T>::value>());
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::BoolSelector<true>)
+    {
+        std::memcpy(m_ptr, items, count*sizeof(T));
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::BoolSelector<false>)
+    {
+        for (index_t i = 0; i < count; ++i)
+        {
+            m_ptr[i] = items[i];
+        }
+    }
+
 
     bool is_elements_equal(const Matrix& m) const
     {
