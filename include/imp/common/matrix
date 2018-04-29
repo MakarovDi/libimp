@@ -189,7 +189,7 @@ public:
         if (ptr() == m.ptr())
             return true;
 
-        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
+        return is_elements_equal(m);
     }
 
 
@@ -295,6 +295,12 @@ public:
     }
 
 private:
+
+    bool is_elements_equal(const Matrix& m) const
+    {
+        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
+    }
+
 
     bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kIntergral>) const
     {
