@@ -194,6 +194,58 @@ TYPED_TEST(MatrixTests, copy_ctor)
 }
 
 
+TYPED_TEST(MatrixTests, assign_method)
+{
+    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
+                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+
+    Matrix<TypeParam> m1(3, 2, ptr, MatrixMem::kReuse);
+    ASSERT_EQ(m1.ptr(), ptr);
+    ASSERT_FALSE(m1.is_own_memory());
+
+    Matrix<TypeParam> m2(3, 3);
+    ASSERT_THROW(m2.assign(m1), std::logic_error);
+
+    m1.assign(Matrix<TypeParam>(3, 2, { TypeParam(0), TypeParam(0), TypeParam(0),
+                                        TypeParam(0), TypeParam(0), TypeParam(0) } ));
+    ASSERT_TRUE(m1.ptr() == ptr);
+    ASSERT_FALSE(m1.is_own_memory());
+
+    for (index_t i = 0; i < m1.size(); ++i)
+    {
+        ASSERT_EQ(m1[i], TypeParam(0));
+    }
+
+    ASSERT_THROW(m1.assign({TypeParam(0)}), std::logic_error);
+
+    m1.assign({ TypeParam(1), TypeParam(1), TypeParam(1),
+                TypeParam(1), TypeParam(1), TypeParam(1) });
+
+    ASSERT_TRUE(m1.ptr() == ptr);
+    ASSERT_FALSE(m1.is_own_memory());
+
+    for (index_t i = 0; i < m1.size(); ++i)
+    {
+        ASSERT_EQ(m1[i], TypeParam(1));
+    }
+
+    ASSERT_THROW(m1.assign({ { TypeParam(2), TypeParam(2) },
+                             { TypeParam(2), TypeParam(2) } }), std::logic_error);
+
+    m1.assign({ { TypeParam(2), TypeParam(2), TypeParam(2) },
+                { TypeParam(2), TypeParam(2), TypeParam(2) } });
+
+    ASSERT_TRUE(m1.ptr() == ptr);
+    ASSERT_FALSE(m1.is_own_memory());
+
+    for (index_t i = 0; i < m1.size(); ++i)
+    {
+        ASSERT_EQ(m1[i], TypeParam(2));
+    }
+
+}
+
+
 TYPED_TEST(MatrixTests, copy_operator)
 {
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
@@ -237,6 +289,55 @@ TYPED_TEST(MatrixTests, copy_operator)
     for (index_t i = 0; i < m2.size(); ++i)
     {
         ASSERT_EQ(m3[i], ptr[i]);
+    }
+}
+
+
+TYPED_TEST(MatrixTests, copy_array_operator)
+{
+    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
+                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+
+    // test reuse mode
+    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    ASSERT_EQ(m.ptr(), ptr);
+
+    m = { { TypeParam(0), TypeParam(1), TypeParam(2) },
+          { TypeParam(3), TypeParam(4), TypeParam(5) } };
+
+    ASSERT_EQ(m.ptr(), ptr);
+    ASSERT_EQ(m.rows(), 2);
+    ASSERT_EQ(m.cols(), 3);
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(i));
+    }
+
+    m = { { TypeParam(0), TypeParam(0) },
+          { TypeParam(0), TypeParam(0) },
+          { TypeParam(0), TypeParam(0) } };
+
+    ASSERT_EQ(m.ptr(), ptr);
+    ASSERT_EQ(m.rows(), 3);
+    ASSERT_EQ(m.cols(), 2);
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(0));
+    }
+
+    m = { { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) },
+          { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) },
+          { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) } };
+
+    ASSERT_TRUE(m.ptr() != ptr);
+    ASSERT_EQ(m.rows(), 3);
+    ASSERT_EQ(m.cols(), 4);
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m[i], TypeParam(1));
     }
 }
 

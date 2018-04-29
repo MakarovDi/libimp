@@ -57,6 +57,7 @@ set(SOURCES
 # Enumerate header files
 set(HEADERS
     include/imp/version
+    include/imp/io/ppm
     include/imp/common/matrix
     include/imp/common/operator
     include/imp/common/rgb_image

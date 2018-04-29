@@ -5,8 +5,11 @@
 #include <iomanip>
 #include <cstring>
 #include <cmath>
+
+#include <ex/range_check>
 #include <ex/common/type>
-#include <ex/policy/index_check>
+#include <ex/common/policy>
+#include <ex/policy/notice>
 #include <ex/meta/selector>
 #include <ex/meta/math_type>
 
@@ -25,7 +28,7 @@ enum MatrixMem
 template
 <
     typename T,
-    class index_policy = ex::policy::IndexCheckAssert<index_t>
+    class ErrorNotice = ex::DefaultErrorNotice
 >
 class Matrix
 {
@@ -134,24 +137,55 @@ public:
     }
 
 public:
+    Matrix& assign(const Matrix& m)
+    {
+        if (this == &m) return *this;
+
+        if (cols() != m.cols() || rows() != m.rows())
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(m.ptr(), size());
+
+        return *this;
+    }
+
+
+    template <index_t M>
+    Matrix& assign(const T (&ptr)[M])
+    {
+        if (size() != M)
+            throw std::logic_error("matrix size != array size");
+
+        assing_items(ptr, size());
+
+        return *this;
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix& assign(const T (&ptr)[M][N])
+    {
+        if (cols() != N || rows() != M)
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(reinterpret_cast<const T*>(ptr), size());
+
+        return *this;
+    }
+
+
     Matrix& operator=(const Matrix& m)
     {
         if (this == &m) return *this;
 
-        if (m_mem_size < m.mem_size() || m_mem_size > m.mem_size()*kMemShrinkageScale)
-        {
-            m_data.reset(new T[m.mem_size()]);
-            m_ptr = m_data.get();
-            m_mem_size = m.mem_size();
-        }
+        return expand_mem_assing(m.ptr(), m.rows(), m.cols());
+    }
 
-        m_rows = m.rows();
-        m_cols = m.cols();
-        m_size = m.size();
 
-        std::memcpy(m_ptr, m.ptr(), m_size*sizeof(T));
-
-        return *this;
+    template <index_t M, index_t N>
+    Matrix& operator=(const T (&ptr)[M][N])
+    {
+        return expand_mem_assing(reinterpret_cast<const T*>(ptr), M, N);
     }
 
 
@@ -187,7 +221,7 @@ public:
         if (ptr() == m.ptr())
             return true;
 
-        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
+        return is_elements_equal(m);
     }
 
 
@@ -238,7 +272,7 @@ public:
 
     inline const T& item(index_t i) const
     {
-        index_policy::check(i, size()-1);
+        ex::range_check<ErrorNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -246,7 +280,7 @@ public:
 
     inline T& item(index_t i)
     {
-        index_policy::check(i, size()-1);
+        ex::range_check<ErrorNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -254,8 +288,8 @@ public:
 
     inline const T& item(index_t x, index_t y) const
     {
-        index_policy::check(x, cols()-1);
-        index_policy::check(y, rows()-1);
+        ex::range_check<ErrorNotice>(x, cols()-1);
+        ex::range_check<ErrorNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -273,8 +307,8 @@ public:
 
     inline T& item(index_t x, index_t y)
     {
-        index_policy::check(x, cols()-1);
-        index_policy::check(y, rows()-1);
+        ex::range_check<ErrorNotice>(x, cols()-1);
+        ex::range_check<ErrorNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -293,6 +327,53 @@ public:
     }
 
 private:
+    Matrix& expand_mem_assing(const T* items, index_t rows, index_t cols)
+    {
+        index_t mem_size = rows*cols* sizeof(T);
+
+        if (m_mem_size < mem_size || m_mem_size > mem_size*kMemShrinkageScale)
+        {
+            m_data.reset(new T[mem_size]);
+            m_ptr = m_data.get();
+            m_mem_size = mem_size;
+        }
+
+        m_rows = rows;
+        m_cols = cols;
+        m_size = rows*cols;
+
+        assing_items(items, m_size);
+
+        return *this;
+    }
+
+
+    void assing_items(const T* items, index_t count)
+    {
+        assing_items(items, count, ex::BoolSelector<std::is_fundamental<T>::value>());
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::BoolSelector<true>)
+    {
+        std::memcpy(m_ptr, items, count*sizeof(T));
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::BoolSelector<false>)
+    {
+        for (index_t i = 0; i < count; ++i)
+        {
+            m_ptr[i] = items[i];
+        }
+    }
+
+
+    bool is_elements_equal(const Matrix& m) const
+    {
+        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
+    }
+
 
     bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kIntergral>) const
     {

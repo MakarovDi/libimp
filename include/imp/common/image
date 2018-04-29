@@ -3,7 +3,7 @@
 
 
 #include <ex/common/type>
-#include <ex/policy/index_check>
+#include <ex/policy/notice>
 
 #include "imp/common/matrix"
 
@@ -12,7 +12,7 @@ namespace imp
 {
 
 
-template <class T, class IndexPolicy>
+template <class T, class NoticePolicy>
 struct NoAliases;
 
 
@@ -23,12 +23,12 @@ template
 <
     class T,
 
-    class IndexCheckPolicy = ex::policy::IndexCheckAssert<index_t>,
-    class PlaneAliases = NoAliases<T, IndexCheckPolicy>
+    class ErrorNotice  = ex::DefaultErrorNotice,
+    class PlaneAliases = NoAliases<T, ErrorNotice>
 >
 class Image final : public PlaneAliases
 {
-    using Matrix = Matrix<T, IndexCheckPolicy>;
+    using Matrix = Matrix<T, ErrorNotice>;
 public:
 
     Image() :
@@ -150,10 +150,10 @@ private:
 
 
 
-template <class T, class IndexPolicy>
+template <class T, class NoticePolicy>
 struct NoAliases
 {
-    using Image = Image<T, IndexPolicy, NoAliases>;
+    using Image = Image<T, NoticePolicy, NoAliases>;
 
 
     enum ColorPlane : index_t
