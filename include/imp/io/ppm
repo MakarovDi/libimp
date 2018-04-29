@@ -1,0 +1,96 @@
+#ifndef    IMP_IO_PPM_HEADER
+#   define IMP_IO_PPM_HEADER
+
+
+#include <cstdint>
+#include <fstream>
+#include <ostream>
+
+#include <ex/meta/math_type>
+#include <ex/encoding/word>
+#include <ex/range_check>
+
+#include "imp/common/rgb_image"
+
+
+namespace imp
+{
+namespace ppm
+{
+
+
+    template<typename ErrorNotice, typename T>
+    static void save(std::ostream& binary_stream,
+                     const imp::RgbImage<T, ErrorNotice>& rgb,
+                     T white_level,
+                     T black_level = T(0))
+    {
+        static_assert(ex::MathType<T>::classify != ex::MathType<T>::kUserType, "type is not supported");
+
+        index_t storage_size;
+
+        switch (ex::MathType<T>::classify)
+        {
+            case ex::MathType<T>::kIntergral:
+                if (white_level > 65535)
+                    throw std::logic_error("white level too high for PPM: 16-bit max");
+                storage_size = white_level <= 255 ? 8 : 16;
+                break;
+
+            case ex::MathType<T>::kFloating:
+                storage_size = 16;
+                break;
+
+            default:
+                throw std::logic_error("something wrong...");
+        }
+
+        const uint16_t ppm_max = uint16_t((1u << storage_size) - 1u);
+
+        // header
+        binary_stream << "P6"        << std::endl;
+        binary_stream << rgb.width() << " " << rgb.height() << std::endl;
+        binary_stream << ppm_max     << std::endl;
+
+        T range = white_level - black_level;
+
+        // content
+        for (index_t i = 0; i < rgb.plane_size() ; ++i)
+        {
+            ex::range_check<ErrorNotice>(rgb.r(i), black_level, white_level);
+            ex::range_check<ErrorNotice>(rgb.g(i), black_level, white_level);
+            ex::range_check<ErrorNotice>(rgb.b(i), black_level, white_level);
+
+            uint16_t r = uint16_t(ppm_max * float(rgb.r(i) - black_level) / range);
+            uint16_t g = uint16_t(ppm_max * float(rgb.g(i) - black_level) / range);
+            uint16_t b = uint16_t(ppm_max * float(rgb.b(i) - black_level) / range);
+
+            if (storage_size == 16) binary_stream.put(ex::word::u16_hi(r));
+            binary_stream.put(ex::word::u16_low(r));
+
+            if (storage_size == 16) binary_stream.put(ex::word::u16_hi(g));
+            binary_stream.put(ex::word::u16_low(g));
+
+            if (storage_size == 16) binary_stream.put(ex::word::u16_hi(b));
+            binary_stream.put(ex::word::u16_low(b));
+        }
+    }
+
+
+    template<typename ErrorNotice, typename T>
+    static void save(const char* file_name,
+                     const imp::RgbImage<T, ErrorNotice>& rgb,
+                     T white_level,
+                     T black_level = T(0))
+    {
+        std::ofstream ppm(file_name, std::ios_base::out | std::ios_base::binary);
+
+        if (!ppm.is_open())
+            throw std::runtime_error("failed to create file");
+
+        imp::ppm::save<ErrorNotice>(ppm, rgb, white_level, black_level);
+    };
+
+}
+}
+#endif // IMP_IO_PPM_HEADER
