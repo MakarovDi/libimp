@@ -3,6 +3,7 @@
 
 
 #include <ex/common/type>
+#include <ex/common/policy>
 
 #include "imp/common/image"
 
@@ -75,7 +76,7 @@ private:
 template
 <
     typename T,
-    class ErrorNotice = ex::policy::AssertNotice
+    class ErrorNotice = ex::DefaultErrorNotice
 >
 using RgbImage = Image<T, ErrorNotice, RgbAliases<T, ErrorNotice>>;
 

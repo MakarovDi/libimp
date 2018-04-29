@@ -23,7 +23,7 @@ template
 <
     class T,
 
-    class ErrorNotice = ex::policy::AssertNotice,
+    class ErrorNotice  = ex::DefaultErrorNotice,
     class PlaneAliases = NoAliases<T, ErrorNotice>
 >
 class Image final : public PlaneAliases

@@ -8,6 +8,7 @@
 
 #include <ex/range_check>
 #include <ex/common/type>
+#include <ex/common/policy>
 #include <ex/policy/notice>
 #include <ex/meta/selector>
 #include <ex/meta/math_type>
@@ -27,7 +28,7 @@ enum MatrixMem
 template
 <
     typename T,
-    class ErrorNotice = ex::policy::AssertNotice
+    class ErrorNotice = ex::DefaultErrorNotice
 >
 class Matrix
 {
