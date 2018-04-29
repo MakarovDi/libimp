@@ -177,20 +177,14 @@ public:
     {
         if (this == &m) return *this;
 
-        if (m_mem_size < m.mem_size() || m_mem_size > m.mem_size()*kMemShrinkageScale)
-        {
-            m_data.reset(new T[m.mem_size()]);
-            m_ptr = m_data.get();
-            m_mem_size = m.mem_size();
-        }
+        return expand_mem_assing(m.ptr(), m.rows(), m.cols());
+    }
 
-        m_rows = m.rows();
-        m_cols = m.cols();
-        m_size = m.size();
 
-        std::memcpy(m_ptr, m.ptr(), m_size*sizeof(T));
-
-        return *this;
+    template <index_t M, index_t N>
+    Matrix& operator=(const T (&ptr)[M][N])
+    {
+        return expand_mem_assing(reinterpret_cast<const T*>(ptr), M, N);
     }
 
 
@@ -332,6 +326,26 @@ public:
     }
 
 private:
+    Matrix& expand_mem_assing(const T* items, index_t rows, index_t cols)
+    {
+        index_t mem_size = rows*cols* sizeof(T);
+
+        if (m_mem_size < mem_size || m_mem_size > mem_size*kMemShrinkageScale)
+        {
+            m_data.reset(new T[mem_size]);
+            m_ptr = m_data.get();
+            m_mem_size = mem_size;
+        }
+
+        m_rows = rows;
+        m_cols = cols;
+        m_size = rows*cols;
+
+        assing_items(items, m_size);
+
+        return *this;
+    }
+
 
     void assing_items(const T* items, index_t count)
     {
