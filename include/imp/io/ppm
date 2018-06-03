@@ -163,9 +163,9 @@ namespace ppm
             float g = float(g_word) / ppm_range;
             float b = float(b_word) / ppm_range;
 
-            image.r(i) = std::round(output_range * r) + black_level;
-            image.g(i) = std::round(output_range * g) + black_level;
-            image.b(i) = std::round(output_range * b) + black_level;
+            image.r(i) = T(std::round(output_range * r)) + black_level;
+            image.g(i) = T(std::round(output_range * g)) + black_level;
+            image.b(i) = T(std::round(output_range * b)) + black_level;
         }
 
         return image;
