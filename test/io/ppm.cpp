@@ -67,14 +67,14 @@ TEST(ppm_test, float_ppm)
 {
     imp::RgbImage<double> img
     ({
-        { { 16, 16 },
-          { 16, 16 }, },
+        { { 16.0, 16.0 },
+          { 16.0, 16.0 }, },
 
-        { { 16, 16 },
-          { 16, 16 }, },
+        { { 16.0, 16.0 },
+          { 16.0, 16.0 }, },
 
-        { { 32, 32 },
-          { 32, 32 }, }
+        { { 32.0, 32.0 },
+          { 32.0, 32.0 }, }
     });
 
     std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
@@ -187,14 +187,14 @@ TEST(ppm_test, load_float)
 {
     imp::RgbImage<double> img1
     ({
-        { { 16, 16 },
-          { 16, 16 }, },
+        { { 16.0, 16.0 },
+          { 16.0, 16.0 }, },
 
-        { { 16, 16 },
-          { 16, 16 }, },
+        { { 16.0, 16.0 },
+          { 16.0, 16.0 }, },
 
-        { { 32, 32 },
-          { 32, 32 }, }
+        { { 32.0, 32.0 },
+          { 32.0, 32.0 }, }
     });
 
     std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
