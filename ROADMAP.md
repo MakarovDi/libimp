@@ -9,7 +9,7 @@
     - [ ] add math operators;
 
 * read/write lossless image formats `imp/io`:
-	- [ ] PPM 8/16 bit;
+	- [x] PPM 8/16 bit;
 	- [ ] BMP;
 	- [ ] PNG 8/16 bit;
     
