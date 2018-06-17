@@ -1,0 +1,148 @@
+#ifndef    IMP_TEST_PGM_HEADER
+#   define IMP_TEST_PGM_HEADER
+
+
+#include <cstdint>
+#include <fstream>
+#include <ostream>
+#include <string>
+
+#include <ex/common/type>
+#include <ex/common/policy>
+#include <ex/meta/math_type>
+#include <ex/encoding/word16>
+#include <ex/range_check>
+
+#include "imp/common/matrix"
+#include "imp/io/ppm"
+
+
+namespace imp
+{
+namespace pgm
+{
+
+
+
+template <typename T>
+static void save(std::ostream& binary_stream,
+                 const imp::Matrix<T>& image,
+                 T white_level,
+                 T black_level = T(0))
+{
+    static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
+
+    index_t storage_size;
+
+    switch (ex::math_type<T>::classify)
+    {
+        case ex::math_type<T>::kIntergral:
+            if (white_level > 65535)
+                throw std::logic_error("white level too high for PPM: 16-bit max");
+            storage_size = white_level <= 255 ? 8 : 16;
+            break;
+
+        case ex::math_type<T>::kFloating:
+            storage_size = 16;
+            break;
+
+        default:
+            throw std::logic_error("something wrong...");
+    }
+
+    const uint16_t pgm_max = uint16_t((1u << storage_size) - 1u);
+
+    // header
+    binary_stream << "P5"        << std::endl;
+    binary_stream << image.cols() << " " << image.rows() << std::endl;
+    binary_stream << pgm_max     << std::endl;
+
+    T range = white_level - black_level;
+
+    // content
+    for (index_t i = 0; i < image.size() ; ++i)
+    {
+        ex::range_check<ex::policy::DefaultNotice>(image[i], black_level, white_level);
+
+        ex::word16 v = uint16_t( std::round(pgm_max * float(image[i] - black_level) / range) );
+
+        if (storage_size == 16) binary_stream.put(uint8_t(v.hi));
+        binary_stream.put(v.low);
+    }
+}
+
+
+template <typename T>
+static void save(const char* file_name,
+                 const imp::Matrix<T>& image,
+                 T white_level,
+                 T black_level = T(0))
+{
+    std::ofstream pgm(file_name, std::ios_base::out | std::ios_base::binary);
+
+    if (!pgm.is_open())
+        throw std::runtime_error("failed to create file");
+
+    imp::pgm::save(pgm, image, white_level, black_level);
+};
+
+
+template <typename T>
+static imp::Matrix<T> load(std::istream& binary_stream,
+                                       T white_level,
+                                       T black_level = T(0))
+{
+    index_t  width;
+    index_t  height;
+    uint16_t pgm_range;
+
+    std::string signature;
+
+    binary_stream >> signature;
+    binary_stream >> width;
+    binary_stream >> height;
+    binary_stream >> pgm_range;
+
+    if (signature != "P5")
+        throw std::runtime_error("file is not PGM (no P5 signature)");
+
+    if (width < 0 || height < 0 || (pgm_range != 255 && pgm_range != 65535))
+        throw std::runtime_error("wrong file format");
+
+    imp::Matrix<T> image(width, height);
+
+    bool is_16bit_ppm = pgm_range == 65535;
+    T    output_range = white_level - black_level;
+
+    binary_stream.get(); // skip single whitespace separator
+
+    for (index_t i = 0; i < image.size(); ++i)
+    {
+        ex::word16 r_word = imp::ppm::internal::read_word(binary_stream, is_16bit_ppm);
+
+        float v = float(r_word) / pgm_range;
+
+        image[i] = T(std::round(output_range * v)) + black_level;
+    }
+
+    return image;
+}
+
+
+template <typename T>
+static imp::Matrix<T> load(const char* file_name,
+                                     T white_level,
+                                     T black_level = T(0))
+{
+    std::ifstream pgm(file_name, std::ios_base::in | std::ios_base::binary);
+
+    if (!pgm.is_open())
+        throw std::runtime_error("can't open file");
+
+    return imp::pgm::load<T>(pgm, white_level, black_level);
+}
+
+
+}
+}
+#endif // IMP_TEST_PGM_HEADER

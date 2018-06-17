@@ -24,14 +24,14 @@ namespace ppm
     namespace internal
     {
 
-        ex::word16 read_word(std::istream& binary_stream, bool long_word)
+        inline ex::word16 read_word(std::istream& binary_stream, bool long_word)
         {
             int hi  = binary_stream.get();
             if (hi == EOF)
                 throw std::runtime_error("unexpected end of stream/file");
 
             if (!long_word)
-                return ex::word16(hi);
+                return ex::word16(uint16_t(hi));
 
             int low = binary_stream.get();
             if (low == EOF)
