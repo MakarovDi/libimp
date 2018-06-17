@@ -1,0 +1,422 @@
+#ifndef    IMP_COMMON_MATRIX_HEADER
+#   define IMP_COMMON_MATRIX_HEADER
+
+#include <memory>
+#include <iomanip>
+#include <cstring>
+#include <cmath>
+
+#include <ex/range_check>
+#include <ex/common/type>
+#include <ex/common/policy>
+#include <ex/policy/notice>
+#include <ex/meta/selector>
+#include <ex/meta/math_type>
+
+
+namespace imp
+{
+
+
+enum RawMemory
+{
+    kCopy = 0,
+    kReuse,
+};
+
+
+template <typename T>
+class Matrix
+{
+public:
+    enum Config
+    {
+        kMemShrinkageScale = 4,
+        kPrintedItemWidth  = 4,
+    };
+
+public:
+    virtual ~Matrix() = default;
+
+
+    Matrix() :
+        m_rows(0),
+        m_cols(0),
+        m_size(0),
+        m_mem_size(0),
+        m_data(nullptr),
+        m_ptr(nullptr)
+    {
+    }
+
+
+    explicit Matrix(index_t cols, index_t rows) :
+        m_rows(rows),
+        m_cols(cols),
+        m_size(rows*cols),
+        m_mem_size(m_size * sizeof(T)),
+        m_data(new T[m_size]),
+        m_ptr(m_data.get())
+    {
+    }
+
+
+    explicit Matrix(index_t cols, index_t rows, const T* ptr, RawMemory mem_mode) :
+        m_rows(rows),
+        m_cols(cols),
+        m_size(rows*cols),
+        m_mem_size(m_size * sizeof(T)),
+        m_data( mem_mode == RawMemory::kCopy ? new T[m_size] : nullptr),
+        m_ptr ( mem_mode == RawMemory::kCopy ? m_data.get()  : const_cast<T*>(ptr) )
+    {
+        if (mem_mode == RawMemory::kCopy)
+        {
+            std::memcpy(m_ptr, ptr, size_t(m_mem_size));
+        }
+    }
+
+
+    template <index_t N>
+    explicit Matrix(index_t cols, index_t rows, const T (&ptr)[N]) :
+        Matrix(cols, rows, ptr, RawMemory::kCopy)
+    {
+    }
+
+
+    template <index_t M>
+    Matrix(const T (&ptr)[M]) :
+        Matrix(1, M, ptr, RawMemory::kCopy)
+    {
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix(const T (&ptr)[M][N]) :
+        Matrix(N, M, reinterpret_cast<const T*>(ptr), RawMemory::kCopy)
+    {
+    }
+
+
+    Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>& ptr) :
+        Matrix(cols, rows, ptr.get(), RawMemory::kCopy)
+    {
+    }
+
+
+    Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>&& ptr) :
+        m_rows(rows),
+        m_cols(cols),
+        m_size(rows*cols),
+        m_mem_size(m_size * sizeof(T)),
+        m_data(std::move(const_cast<std::unique_ptr<T[]>&>(ptr) )),
+        m_ptr(m_data.get())
+    {
+    }
+
+
+    Matrix(const Matrix& m) :
+        Matrix(m.cols(), m.rows(), const_cast<T*>(m.ptr()), RawMemory::kCopy)
+    {
+    }
+
+
+    Matrix(Matrix&& m) noexcept :
+        Matrix(m.cols(), m.rows(), std::move(m.m_data))
+    {
+        m_ptr = m.m_ptr;
+
+        Matrix& mx = const_cast<Matrix&>(m);
+
+        mx.m_ptr  = nullptr;
+        mx.m_rows = mx.m_cols = 0;
+        mx.m_size = mx.m_mem_size = 0;
+    }
+
+public:
+    Matrix& assign(const Matrix& m)
+    {
+        if (this == &m) return *this;
+
+        if (cols() != m.cols() || rows() != m.rows())
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(m.ptr(), size());
+
+        return *this;
+    }
+
+
+    template <index_t M>
+    Matrix& assign(const T (&ptr)[M])
+    {
+        if (size() != M)
+            throw std::logic_error("matrix size != array size");
+
+        assing_items(ptr, size());
+
+        return *this;
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix& assign(const T (&ptr)[M][N])
+    {
+        if (cols() != N || rows() != M)
+            throw std::logic_error("matrix must be equal in size");
+
+        assing_items(reinterpret_cast<const T*>(ptr), size());
+
+        return *this;
+    }
+
+
+    Matrix& operator=(const Matrix& m)
+    {
+        if (this == &m) return *this;
+
+        return expand_mem_assing(m.ptr(), m.rows(), m.cols());
+    }
+
+
+    template <index_t M, index_t N>
+    Matrix& operator=(const T (&ptr)[M][N])
+    {
+        return expand_mem_assing(reinterpret_cast<const T*>(ptr), M, N);
+    }
+
+
+    Matrix& operator=(Matrix&& m) noexcept
+    {
+        if (this == &m) return *this;
+
+        m_rows = m.rows();
+        m_cols = m.cols();
+        m_size = m.size();
+
+        m_data = std::move(m.m_data);
+        m_mem_size = m.mem_size();
+
+        m_ptr = m.m_ptr;
+
+        m.m_ptr  = nullptr;
+        m.m_rows = m.m_cols = 0;
+        m.m_size = m.m_mem_size = 0;
+
+        return *this;
+    }
+
+
+    bool operator==(const Matrix& m) const
+    {
+        if (&m == this)
+            return true;
+
+        if (cols() != m.cols() || rows() != m.rows())
+            return false;
+
+        if (ptr() == m.ptr())
+            return true;
+
+        return is_elements_equal(m);
+    }
+
+
+    bool operator !=(const Matrix& m) const
+    {
+        return !operator==(m);
+    }
+
+
+    Matrix& operator+=(const Matrix& m)
+    {
+        if (m.rows() != rows() || m.cols() != cols())
+            throw std::logic_error("matrix dimension mismatch");
+
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            m_ptr[i] += m.item(i);
+        }
+
+        return *this;
+    }
+
+
+    Matrix& operator-=(const Matrix& m)
+    {
+        if (m.rows() != rows() || m.cols() != cols())
+            throw std::logic_error("matrix dimension mismatch");
+
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            m_ptr[i] -= m.item(i);
+        }
+
+        return *this;
+    }
+
+public:
+    index_t rows() const { return m_rows; }
+    index_t cols() const { return m_cols; }
+    index_t size() const { return m_size; }
+
+    index_t mem_size()      const { return m_mem_size;              }
+    bool    is_own_memory() const { return m_data.get() != nullptr; }
+
+    const T* ptr() const { return m_ptr; }
+    T*       ptr()       { return m_ptr; }
+
+
+    inline const T& item(index_t i) const
+    {
+        ex::range_check<ex::policy::DefaultNotice>(i, size()-1);
+
+        return m_ptr[i];
+    }
+
+
+    inline T& item(index_t i)
+    {
+        ex::range_check<ex::policy::DefaultNotice>(i, size()-1);
+
+        return m_ptr[i];
+    }
+
+
+    inline const T& item(index_t x, index_t y) const
+    {
+        ex::range_check<ex::policy::DefaultNotice>(x, cols()-1);
+        ex::range_check<ex::policy::DefaultNotice>(y, rows()-1);
+
+        return m_ptr[y*cols() + x];
+    }
+
+
+    inline const T& operator()(index_t i) const { return item(i); }
+    inline       T& operator()(index_t i)       { return item(i); }
+
+    inline const T& operator[](index_t i) const { return item(i); }
+    inline       T& operator[](index_t i)       { return item(i); }
+
+    inline const T& operator()(index_t x, index_t y) const { return item(x, y); }
+    inline       T& operator()(index_t x, index_t y)       { return item(x, y); }
+
+
+    inline T& item(index_t x, index_t y)
+    {
+        ex::range_check<ex::policy::DefaultNotice>(x, cols()-1);
+        ex::range_check<ex::policy::DefaultNotice>(y, rows()-1);
+
+        return m_ptr[y*cols() + x];
+    }
+
+
+    template <typename C>
+    void print(std::basic_ostream<C>& stream) const
+    {
+        for (index_t y = 0; y < rows(); ++y)
+        {
+            for (index_t x = 0; x < cols(); ++x)
+                stream << std::setw(kPrintedItemWidth) << item(x, y) << " ";
+
+            stream << std::endl;
+        }
+    }
+
+private:
+    Matrix& expand_mem_assing(const T* items, index_t rows, index_t cols)
+    {
+        index_t mem_size = rows*cols* sizeof(T);
+
+        if (m_mem_size < mem_size || m_mem_size > mem_size*kMemShrinkageScale)
+        {
+            m_data.reset(new T[mem_size]);
+            m_ptr = m_data.get();
+            m_mem_size = mem_size;
+        }
+
+        m_rows = rows;
+        m_cols = cols;
+        m_size = rows*cols;
+
+        assing_items(items, m_size);
+
+        return *this;
+    }
+
+
+    void assing_items(const T* items, index_t count)
+    {
+        assing_items(items, count, ex::bool_selector<std::is_fundamental<T>::value>());
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::bool_selector<true>)
+    {
+        std::memcpy(m_ptr, items, count*sizeof(T));
+    }
+
+
+    void assing_items(const T* items, index_t count, ex::bool_selector<false>)
+    {
+        for (index_t i = 0; i < count; ++i)
+        {
+            m_ptr[i] = items[i];
+        }
+    }
+
+
+    bool is_elements_equal(const Matrix& m) const
+    {
+        return is_elements_equal(m, ex::selector<ex::math_type<T>::classify>());
+    }
+
+
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kIntergral>) const
+    {
+        // integral type
+        return memcmp(m.ptr(), ptr(), m.size()* sizeof(T)) == 0;
+    }
+
+
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kFloating>) const
+    {
+        // floating type
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            if (std::fabs(m[i] - item(i)) > std::numeric_limits<T>::epsilon())
+                return false;
+        }
+
+        return true;
+    }
+
+
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kUserType>) const
+    {
+        // user type
+        for (index_t i = 0; i < m.size(); ++i)
+        {
+            if (m[i] != item(i))
+                return false;
+        }
+
+        return true;
+    }
+
+private:
+    index_t m_rows;
+    index_t m_cols;
+
+    index_t m_size;
+    index_t m_mem_size;
+
+    std::unique_ptr<T[]> m_data;
+
+    T* m_ptr;
+};
+
+
+#include "imp/common/operator"
+
+}
+#endif // IMP_COMMON_MATRIX_HEADER

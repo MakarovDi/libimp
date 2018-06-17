@@ -1,0 +1,175 @@
+#ifndef    IMP_COMMON_IMAGE_H
+#   define IMP_COMMON_IMAGE_H
+
+
+#include <ex/common/type>
+#include <ex/policy/notice>
+
+#include "imp/common/matrix"
+
+
+namespace imp
+{
+
+
+template <class T>
+struct DefaultAlias;
+
+
+// TODO: change [class PlaneAliases = DefaultAlias<T, IndexCheckPolicy>] -> [template <class, class> class PlaneAliases = DefaultAlias]
+// TODO: when msvc grow up to it. msvc 2015 can't trace it
+
+template
+<
+    class T,
+    class Alias = DefaultAlias<T>
+>
+class Image final : public Alias
+{
+    using Matrix = Matrix<T>;
+public:
+
+    Image() :
+        m_width(0),
+        m_height(0),
+        m_plane_size(0),
+        m_data()
+    {
+        this->init_alias(*this);
+    }
+
+
+    Image(index_t width, index_t height) :
+        m_width(width),
+        m_height(height),
+        m_plane_size(width*height),
+        m_data(3*m_plane_size, 1)
+    {
+        this->init_alias(*this);
+    }
+
+
+    explicit Image(index_t width, index_t height, const T* ptr, RawMemory mem_mode) :
+        m_width(width),
+        m_height(height),
+        m_plane_size(width*height),
+        m_data(3*m_plane_size, 1, ptr, mem_mode)
+    {
+        this->init_alias(*this);
+    }
+
+
+    template <index_t M, index_t N>
+    Image(const T (&ptr)[3][M][N]) :
+        Image(N, M, reinterpret_cast<const T*>(ptr), RawMemory::kCopy)
+    {
+    }
+
+
+    Image(const Image& image) : Image(image.width(), image.height())
+    {
+        m_data = image.m_data;
+    }
+
+
+    Image& operator=(const Image& rgb)
+    {
+        if (this == &rgb) return *this;
+
+        m_plane_size = rgb.m_plane_size;
+        m_height = rgb.m_height;
+        m_width = rgb.m_width;
+
+        m_data = rgb.m_data;
+
+        this->init_alias(*this);
+
+        return *this;
+    }
+
+
+    Image(Image&&) noexcept = default;
+    Image& operator=(Image&&) noexcept = default;
+
+public:
+    bool operator==(const Image& img) const
+    {
+        if (this == &img) return true;
+
+        if (width() != img.width() || height() != img.height())
+            return false;
+
+        if (ptr() == img.ptr())
+            return true;
+
+        return m_data == img.m_data;
+    }
+
+
+    bool operator!=(const Image& img) const { return !operator==(img); }
+
+public:
+    index_t width()      const { return m_width;  }
+    index_t height()     const { return m_height; }
+
+    index_t plane_size() const { return m_plane_size;      }
+    index_t mem_size()   const { return m_data.mem_size(); }
+
+    const T* ptr() const { return m_data.ptr(); }
+    T*       ptr()       { return m_data.ptr(); }
+
+    bool     is_own_memory() const { return m_data.is_own_memory(); }
+
+public:
+    using ColorPlane = typename Alias::ColorPlane;
+
+    inline const T& color(index_t index,        ColorPlane color_plane) const { return m_data[index + color_plane*m_plane_size]; }
+    inline       T& color(index_t index,        ColorPlane color_plane)       { return m_data[index + color_plane*m_plane_size]; }
+    inline const T& color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane);        }
+    inline       T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane);        }
+
+    inline const T& operator()(index_t index,        ColorPlane color_plane) const { return color(index, color_plane); }
+    inline       T& operator()(index_t index,        ColorPlane color_plane)       { return color(index, color_plane); }
+    inline const T& operator()(index_t x, index_t y, ColorPlane color_plane) const { return color(x, y, color_plane);  }
+    inline       T& operator()(index_t x, index_t y, ColorPlane color_plane)       { return color(x, y, color_plane);  }
+
+    inline const T& operator()(index_t index) const { return m_data[index]; }
+    inline       T& operator()(index_t index)       { return m_data[index]; }
+    inline const T& operator[](index_t index) const { return m_data[index]; }
+    inline       T& operator[](index_t index)       { return m_data[index]; }
+
+private:
+    index_t m_width;
+    index_t m_height;
+    index_t m_plane_size;
+
+    Matrix m_data;
+};
+
+
+
+template <class T>
+struct DefaultAlias
+{
+    using Image = Image<T, DefaultAlias>;
+
+
+    enum ColorPlane : index_t
+    {
+        kPlane1 = 0,
+        kPlane2 = 1,
+        kPlane3 = 2,
+        kCount,
+    };
+
+protected:
+    DefaultAlias()  {}
+    ~DefaultAlias() {} // non-virtual destructor
+
+protected:
+    void init_alias(Image&) { }
+};
+
+
+}
+#endif // IMP_COMMON_IMAGE_H

@@ -56,7 +56,13 @@ set(SOURCES
 
 # Enumerate header files
 set(HEADERS
-    include/imp/version)
+    include/imp/version
+    include/imp/io/ppm
+    include/imp/io/pgm
+    include/imp/common/matrix
+    include/imp/common/operator
+    include/imp/image/rgb_image
+    include/imp/image/image)
 
 
 # define and export library
@@ -78,7 +84,7 @@ target_link_libraries(imp PUBLIC ex)
 
 
 # unit tests
-#if (BUILD_TESTS)
-#    add_subdirectory(test)
-#    message(STATUS "Test building enabled")
-#endif()
+if (BUILD_TESTS)
+    add_subdirectory(test)
+    message(STATUS "Test building enabled")
+endif()
