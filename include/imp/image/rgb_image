@@ -5,17 +5,17 @@
 #include <ex/common/type>
 #include <ex/common/policy>
 
-#include "imp/common/image"
+#include "imp/image/image"
 
 
 namespace imp
 {
 
 
-template <typename T, typename NoticePolicy>
-struct RgbAliases
+template <typename T>
+struct RgbAlias
 {
-    using Image = Image<T, NoticePolicy, RgbAliases>;
+    using Image = Image<T, RgbAlias>;
 public:
     enum ColorPlane : index_t
     {
@@ -42,28 +42,28 @@ public:
     inline       T& b(index_t x, index_t y)       { return m_b_plane(x, y);  }
 
     const Matrix<T>& r_plane() const { return m_r_plane; }
-          Matrix<T>  r_plane()       { return Matrix<T>(m_r_plane.cols(), m_r_plane.rows(), m_r_plane.ptr(), MatrixMem::kReuse); }
+          Matrix<T>  r_plane()       { return Matrix<T>(m_r_plane.cols(), m_r_plane.rows(), m_r_plane.ptr(), RawMemory::kReuse); }
 
     const Matrix<T>& g_plane() const { return m_g_plane; }
-          Matrix<T>  g_plane()       { return Matrix<T>(m_g_plane.cols(), m_g_plane.rows(), m_g_plane.ptr(), MatrixMem::kReuse); }
+          Matrix<T>  g_plane()       { return Matrix<T>(m_g_plane.cols(), m_g_plane.rows(), m_g_plane.ptr(), RawMemory::kReuse); }
 
     const Matrix<T>& b_plane() const { return m_b_plane; }
-          Matrix<T>  b_plane()       { return Matrix<T>(m_b_plane.cols(), m_b_plane.rows(), m_b_plane.ptr(), MatrixMem::kReuse); }
+          Matrix<T>  b_plane()       { return Matrix<T>(m_b_plane.cols(), m_b_plane.rows(), m_b_plane.ptr(), RawMemory::kReuse); }
 
 
-    RgbAliases(RgbAliases&&) noexcept = default;
-    RgbAliases& operator=(RgbAliases&&) noexcept = default;
-
-protected:
-    RgbAliases()  { }
-    ~RgbAliases() { } // non-virtual destructor
+    RgbAlias(RgbAlias&&) noexcept = default;
+    RgbAlias& operator=(RgbAlias&&) noexcept = default;
 
 protected:
-    void init_aliases(Image& img)
+    RgbAlias()  { }
+    ~RgbAlias() { } // non-virtual destructor
+
+protected:
+    void init_alias(Image& img)
     {
-        m_r_plane = Matrix<T>(img.width(), img.height(), img.ptr(),                      MatrixMem::kReuse);
-        m_g_plane = Matrix<T>(img.width(), img.height(), img.ptr() + img.plane_size(),   MatrixMem::kReuse);
-        m_b_plane = Matrix<T>(img.width(), img.height(), img.ptr() + 2*img.plane_size(), MatrixMem::kReuse);
+        m_r_plane = Matrix<T>(img.width(), img.height(), img.ptr(),                      RawMemory::kReuse);
+        m_g_plane = Matrix<T>(img.width(), img.height(), img.ptr() + img.plane_size(),   RawMemory::kReuse);
+        m_b_plane = Matrix<T>(img.width(), img.height(), img.ptr() + 2*img.plane_size(), RawMemory::kReuse);
     }
 
 private:
@@ -73,12 +73,8 @@ private:
 };
 
 
-template
-<
-    typename T,
-    class ErrorNotice = ex::DefaultErrorNotice
->
-using RgbImage = Image<T, ErrorNotice, RgbAliases<T, ErrorNotice>>;
+template <typename T>
+using RgbImage = Image<T, RgbAlias<T>>;
 
 
 }

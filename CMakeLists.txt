@@ -60,8 +60,8 @@ set(HEADERS
     include/imp/io/ppm
     include/imp/common/matrix
     include/imp/common/operator
-    include/imp/common/rgb_image
-    include/imp/common/image)
+    include/imp/image/rgb_image
+    include/imp/image/image)
 
 
 # define and export library

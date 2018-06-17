@@ -37,7 +37,7 @@ TYPED_TEST(MatrixTests, raw_ptr_copy_ctor)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(m.is_own_memory());
 
     std::memset(ptr, 0, sizeof(TypeParam)*3*2);
@@ -56,7 +56,7 @@ TYPED_TEST(MatrixTests, raw_ptr_reuse_ctor)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(m.is_own_memory());
 
     std::memset(ptr, 0, sizeof(TypeParam)*3*2);
@@ -76,7 +76,7 @@ TYPED_TEST(MatrixTests, const_raw_ptr_copy_ctor)
 
     const TypeParam* const_ptr = ptr;
 
-    Matrix<TypeParam> m(3, 2, const_ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m(3, 2, const_ptr, RawMemory::kCopy);
     ASSERT_TRUE(m.is_own_memory());
 
     std::memset(ptr, 0, sizeof(TypeParam)*3*2);
@@ -97,7 +97,7 @@ TYPED_TEST(MatrixTests, const_raw_ptr_reuse_ctor)
 
     const TypeParam* const_ptr = ptr;
 
-    const Matrix<TypeParam> m(3, 2, const_ptr, MatrixMem::kReuse);
+    const Matrix<TypeParam> m(3, 2, const_ptr, RawMemory::kReuse);
     ASSERT_FALSE(m.is_own_memory());
 
     std::memset(ptr, 0, sizeof(TypeParam)*3*2);
@@ -159,7 +159,7 @@ TYPED_TEST(MatrixTests, copy_ctor)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m.ptr(), ptr);
 
     Matrix<TypeParam> m2(m);
@@ -176,7 +176,7 @@ TYPED_TEST(MatrixTests, copy_ctor)
     }
 
 
-    Matrix<TypeParam> m1(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(m1.ptr() != ptr);
 
     Matrix<TypeParam> m4(m1);
@@ -199,7 +199,7 @@ TYPED_TEST(MatrixTests, assign_method)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m1(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m1.ptr(), ptr);
     ASSERT_FALSE(m1.is_own_memory());
 
@@ -252,7 +252,7 @@ TYPED_TEST(MatrixTests, copy_operator)
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m.ptr(), ptr);
 
     Matrix<TypeParam> m1(1, 1);
@@ -272,7 +272,7 @@ TYPED_TEST(MatrixTests, copy_operator)
     }
 
     // test copy mode
-    Matrix<TypeParam> m2(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m2(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(m2.ptr() != ptr);
 
     Matrix<TypeParam> m3(1, 1);
@@ -299,7 +299,7 @@ TYPED_TEST(MatrixTests, copy_array_operator)
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m.ptr(), ptr);
 
     m = { { TypeParam(0), TypeParam(1), TypeParam(2) },
@@ -347,7 +347,7 @@ TYPED_TEST(MatrixTests, mem_shrinkage_test)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
 
     // test no memory shrinkage
     index_t size = Matrix<TypeParam>::Config::kMemShrinkageScale*m.size() - 1;
@@ -373,7 +373,7 @@ TYPED_TEST(MatrixTests, move_ctor)
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m.ptr(), ptr);
 
     Matrix<TypeParam> m2(std::move(m));
@@ -392,7 +392,7 @@ TYPED_TEST(MatrixTests, move_ctor)
     ASSERT_EQ(m.mem_size(), 0);
 
     // test copy mode
-    Matrix<TypeParam> m1(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(m1.ptr() != ptr);
 
     TypeParam* p = m1.ptr();
@@ -419,7 +419,7 @@ TYPED_TEST(MatrixTests, move_rvalue_ctor)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m2(Matrix<TypeParam>(3, 2, ptr, MatrixMem::kReuse));
+    Matrix<TypeParam> m2(Matrix<TypeParam>(3, 2, ptr, RawMemory::kReuse));
     ASSERT_EQ(m2.ptr(), ptr);
     ASSERT_FALSE(m2.is_own_memory());
     ASSERT_EQ(m2.size(), 6);
@@ -427,7 +427,7 @@ TYPED_TEST(MatrixTests, move_rvalue_ctor)
     ASSERT_EQ(m2.cols(), 3);
     ASSERT_EQ(m2.mem_size(), 6 * sizeof(TypeParam));
 
-    Matrix<TypeParam> m3(Matrix<TypeParam>(3, 2, ptr, MatrixMem::kCopy));
+    Matrix<TypeParam> m3(Matrix<TypeParam>(3, 2, ptr, RawMemory::kCopy));
     ASSERT_TRUE(m3.ptr() != ptr);
     ASSERT_TRUE(m3.is_own_memory());
     ASSERT_EQ(m3.size(), 6);
@@ -443,7 +443,7 @@ TYPED_TEST(MatrixTests, move_operator)
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
     ASSERT_EQ(m.ptr(), ptr);
 
     Matrix<TypeParam> m2(1, 1);
@@ -465,7 +465,7 @@ TYPED_TEST(MatrixTests, move_operator)
     ASSERT_EQ(m2.mem_size(), 6 * sizeof(TypeParam));
 
     // test copy mode
-    Matrix<TypeParam> m1(3, 2, ptr, MatrixMem::kCopy);
+    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(m1.ptr() != ptr);
 
     TypeParam* p = m1.ptr();
@@ -551,7 +551,7 @@ TYPED_TEST(MatrixTests, indexing)
     TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
                         TypeParam(4), TypeParam(5), TypeParam(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, MatrixMem::kReuse);
+    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
 
     index_t i = 0;
 

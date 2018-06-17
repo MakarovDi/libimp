@@ -12,23 +12,21 @@ namespace imp
 {
 
 
-template <class T, class NoticePolicy>
-struct NoAliases;
+template <class T>
+struct DefaultAlias;
 
 
-// TODO: change [class PlaneAliases = NoAliases<T, IndexCheckPolicy>] -> [template <class, class> class PlaneAliases = NoAliases]
+// TODO: change [class PlaneAliases = DefaultAlias<T, IndexCheckPolicy>] -> [template <class, class> class PlaneAliases = DefaultAlias]
 // TODO: when msvc grow up to it. msvc 2015 can't trace it
 
 template
 <
     class T,
-
-    class ErrorNotice  = ex::DefaultErrorNotice,
-    class PlaneAliases = NoAliases<T, ErrorNotice>
+    class Alias = DefaultAlias<T>
 >
-class Image final : public PlaneAliases
+class Image final : public Alias
 {
-    using Matrix = Matrix<T, ErrorNotice>;
+    using Matrix = Matrix<T>;
 public:
 
     Image() :
@@ -37,7 +35,7 @@ public:
         m_plane_size(0),
         m_data()
     {
-        this->init_aliases(*this);
+        this->init_alias(*this);
     }
 
 
@@ -47,23 +45,23 @@ public:
         m_plane_size(width*height),
         m_data(3*m_plane_size, 1)
     {
-        this->init_aliases(*this);
+        this->init_alias(*this);
     }
 
 
-    explicit Image(index_t width, index_t height, const T* ptr, MatrixMem mem_mode) :
+    explicit Image(index_t width, index_t height, const T* ptr, RawMemory mem_mode) :
         m_width(width),
         m_height(height),
         m_plane_size(width*height),
         m_data(3*m_plane_size, 1, ptr, mem_mode)
     {
-        this->init_aliases(*this);
+        this->init_alias(*this);
     }
 
 
     template <index_t M, index_t N>
     Image(const T (&ptr)[3][M][N]) :
-        Image(N, M, reinterpret_cast<const T*>(ptr), MatrixMem::kCopy)
+        Image(N, M, reinterpret_cast<const T*>(ptr), RawMemory::kCopy)
     {
     }
 
@@ -84,7 +82,7 @@ public:
 
         m_data = rgb.m_data;
 
-        this->init_aliases(*this);
+        this->init_alias(*this);
 
         return *this;
     }
@@ -108,7 +106,7 @@ public:
     }
 
 
-    bool operator!=(const Image img) const { return !operator==(img); }
+    bool operator!=(const Image& img) const { return !operator==(img); }
 
 public:
     index_t width()      const { return m_width;  }
@@ -123,7 +121,7 @@ public:
     bool     is_own_memory() const { return m_data.is_own_memory(); }
 
 public:
-    using ColorPlane = typename PlaneAliases::ColorPlane;
+    using ColorPlane = typename Alias::ColorPlane;
 
     inline const T& color(index_t index,        ColorPlane color_plane) const { return m_data[index + color_plane*m_plane_size]; }
     inline       T& color(index_t index,        ColorPlane color_plane)       { return m_data[index + color_plane*m_plane_size]; }
@@ -150,10 +148,10 @@ private:
 
 
 
-template <class T, class NoticePolicy>
-struct NoAliases
+template <class T>
+struct DefaultAlias
 {
-    using Image = Image<T, NoticePolicy, NoAliases>;
+    using Image = Image<T, DefaultAlias>;
 
 
     enum ColorPlane : index_t
@@ -165,11 +163,11 @@ struct NoAliases
     };
 
 protected:
-    NoAliases()  {}
-    ~NoAliases() {} // non-virtual destructor
+    DefaultAlias()  {}
+    ~DefaultAlias() {} // non-virtual destructor
 
 protected:
-    void init_aliases(Image&) { }
+    void init_alias(Image&) { }
 };
 
 

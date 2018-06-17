@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
-#include <imp/common/rgb_image>
+#include <imp/image/rgb_image>
 
 
 using namespace imp;
@@ -63,7 +63,7 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kCopy);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kCopy);
     ASSERT_TRUE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() != ptr);
 
@@ -99,7 +99,7 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
@@ -174,7 +174,7 @@ TYPED_TEST(RgbImageTypeMixture, copy_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(img.is_own_memory());
 
     RgbImage<T> img2(img);
@@ -213,7 +213,7 @@ TYPED_TEST(RgbImageTypeMixture, copy_operator)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(img.is_own_memory());
 
     RgbImage<T> img2(3, 3);
@@ -254,7 +254,7 @@ TYPED_TEST(RgbImageTypeMixture, move_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
@@ -293,7 +293,7 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_TRUE(img.ptr() == ptr);
 
@@ -325,7 +325,7 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
                 T(3*1), T(3*2), T(3*3),
                 T(3*4), T(3*5), T(3*6)  };
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
 
 
 
@@ -389,7 +389,7 @@ TYPED_TEST(RgbImageTypeMixture, planes)
                 T(3*1), T(3*2), T(3*3),
                 T(3*4), T(3*5), T(3*6)  };
 
-    RgbImage<T> img(3, 2, ptr, MatrixMem::kReuse);
+    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
 
 
     const Matrix<T> r_mx = img.r_plane();
@@ -402,7 +402,7 @@ TYPED_TEST(RgbImageTypeMixture, planes)
 
     ASSERT_TRUE(r1.ptr() == r2.ptr());
 
-    Matrix<T> m(3, 3, ptr+4, MatrixMem::kCopy);
+    Matrix<T> m(3, 3, ptr+4, RawMemory::kCopy);
 
     r2 = std::move(m);
     ASSERT_TRUE(r2.ptr() != r1.ptr());
@@ -414,7 +414,7 @@ TYPED_TEST(RgbImageTypeMixture, planes)
 
     ASSERT_TRUE(g1.ptr() == g2.ptr());
 
-    m = Matrix<T>(3, 3, ptr+4, MatrixMem::kCopy);
+    m = Matrix<T>(3, 3, ptr+4, RawMemory::kCopy);
 
     g2 = std::move(m);
     ASSERT_TRUE(g2.ptr() != g1.ptr());
@@ -425,7 +425,7 @@ TYPED_TEST(RgbImageTypeMixture, planes)
 
     ASSERT_TRUE(b1.ptr() == b2.ptr());
 
-    m = Matrix<T>(3, 3, ptr+4, MatrixMem::kCopy);
+    m = Matrix<T>(3, 3, ptr+4, RawMemory::kCopy);
 
     b2 = std::move(m);
     ASSERT_TRUE(b2.ptr() != b1.ptr());
@@ -446,9 +446,9 @@ TYPED_TEST(RgbImageTypeMixture, equality_operator)
                 T(3*1), T(3*2), T(3*3),
                 T(3*4), T(3*5), T(3*6)  };
 
-    RgbImage<T> img1(3, 2, ptr, MatrixMem::kReuse);
-    RgbImage<T> img2(2, 3, ptr, MatrixMem::kReuse);
-    RgbImage<T> img3(3, 2, ptr, MatrixMem::kCopy);
+    RgbImage<T> img1(3, 2, ptr, RawMemory::kReuse);
+    RgbImage<T> img2(2, 3, ptr, RawMemory::kReuse);
+    RgbImage<T> img3(3, 2, ptr, RawMemory::kCopy);
 
     ASSERT_TRUE(img1 != img2);
     ASSERT_TRUE(img3 == img1);

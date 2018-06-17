@@ -18,18 +18,14 @@ namespace imp
 {
 
 
-enum MatrixMem
+enum RawMemory
 {
     kCopy = 0,
     kReuse,
 };
 
 
-template
-<
-    typename T,
-    class ErrorNotice = ex::DefaultErrorNotice
->
+template <typename T>
 class Matrix
 {
 public:
@@ -65,15 +61,15 @@ public:
     }
 
 
-    explicit Matrix(index_t cols, index_t rows, const T* ptr, MatrixMem mem_mode) :
+    explicit Matrix(index_t cols, index_t rows, const T* ptr, RawMemory mem_mode) :
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
         m_mem_size(m_size * sizeof(T)),
-        m_data( mem_mode == MatrixMem::kCopy ? new T[m_size] : nullptr),
-        m_ptr ( mem_mode == MatrixMem::kCopy ? m_data.get()  : const_cast<T*>(ptr) )
+        m_data( mem_mode == RawMemory::kCopy ? new T[m_size] : nullptr),
+        m_ptr ( mem_mode == RawMemory::kCopy ? m_data.get()  : const_cast<T*>(ptr) )
     {
-        if (mem_mode == MatrixMem::kCopy)
+        if (mem_mode == RawMemory::kCopy)
         {
             std::memcpy(m_ptr, ptr, size_t(m_mem_size));
         }
@@ -82,27 +78,27 @@ public:
 
     template <index_t N>
     explicit Matrix(index_t cols, index_t rows, const T (&ptr)[N]) :
-        Matrix(cols, rows, ptr, MatrixMem::kCopy)
+        Matrix(cols, rows, ptr, RawMemory::kCopy)
     {
     }
 
 
     template <index_t M>
     Matrix(const T (&ptr)[M]) :
-        Matrix(1, M, ptr, MatrixMem::kCopy)
+        Matrix(1, M, ptr, RawMemory::kCopy)
     {
     }
 
 
     template <index_t M, index_t N>
     Matrix(const T (&ptr)[M][N]) :
-        Matrix(N, M, reinterpret_cast<const T*>(ptr), MatrixMem::kCopy)
+        Matrix(N, M, reinterpret_cast<const T*>(ptr), RawMemory::kCopy)
     {
     }
 
 
     Matrix(index_t cols, index_t rows, const std::unique_ptr<T[]>& ptr) :
-        Matrix(cols, rows, ptr.get(), MatrixMem::kCopy)
+        Matrix(cols, rows, ptr.get(), RawMemory::kCopy)
     {
     }
 
@@ -119,12 +115,12 @@ public:
 
 
     Matrix(const Matrix& m) :
-        Matrix(m.cols(), m.rows(), const_cast<T*>(m.ptr()), MatrixMem::kCopy)
+        Matrix(m.cols(), m.rows(), const_cast<T*>(m.ptr()), RawMemory::kCopy)
     {
     }
 
 
-    Matrix(const Matrix&& m) noexcept :
+    Matrix(Matrix&& m) noexcept :
         Matrix(m.cols(), m.rows(), std::move(m.m_data))
     {
         m_ptr = m.m_ptr;
@@ -272,7 +268,7 @@ public:
 
     inline const T& item(index_t i) const
     {
-        ex::range_check<ErrorNotice>(i, size()-1);
+        ex::range_check<ex::policy::DefaultNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -280,7 +276,7 @@ public:
 
     inline T& item(index_t i)
     {
-        ex::range_check<ErrorNotice>(i, size()-1);
+        ex::range_check<ex::policy::DefaultNotice>(i, size()-1);
 
         return m_ptr[i];
     }
@@ -288,8 +284,8 @@ public:
 
     inline const T& item(index_t x, index_t y) const
     {
-        ex::range_check<ErrorNotice>(x, cols()-1);
-        ex::range_check<ErrorNotice>(y, rows()-1);
+        ex::range_check<ex::policy::DefaultNotice>(x, cols()-1);
+        ex::range_check<ex::policy::DefaultNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -307,8 +303,8 @@ public:
 
     inline T& item(index_t x, index_t y)
     {
-        ex::range_check<ErrorNotice>(x, cols()-1);
-        ex::range_check<ErrorNotice>(y, rows()-1);
+        ex::range_check<ex::policy::DefaultNotice>(x, cols()-1);
+        ex::range_check<ex::policy::DefaultNotice>(y, rows()-1);
 
         return m_ptr[y*cols() + x];
     }
@@ -350,17 +346,17 @@ private:
 
     void assing_items(const T* items, index_t count)
     {
-        assing_items(items, count, ex::BoolSelector<std::is_fundamental<T>::value>());
+        assing_items(items, count, ex::bool_selector<std::is_fundamental<T>::value>());
     }
 
 
-    void assing_items(const T* items, index_t count, ex::BoolSelector<true>)
+    void assing_items(const T* items, index_t count, ex::bool_selector<true>)
     {
         std::memcpy(m_ptr, items, count*sizeof(T));
     }
 
 
-    void assing_items(const T* items, index_t count, ex::BoolSelector<false>)
+    void assing_items(const T* items, index_t count, ex::bool_selector<false>)
     {
         for (index_t i = 0; i < count; ++i)
         {
@@ -371,18 +367,18 @@ private:
 
     bool is_elements_equal(const Matrix& m) const
     {
-        return is_elements_equal(m, ex::IntSelector<ex::MathType<T>::classify>());
+        return is_elements_equal(m, ex::selector<ex::math_type<T>::classify>());
     }
 
 
-    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kIntergral>) const
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kIntergral>) const
     {
         // integral type
         return memcmp(m.ptr(), ptr(), m.size()* sizeof(T)) == 0;
     }
 
 
-    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kFloating>) const
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kFloating>) const
     {
         // floating type
         for (index_t i = 0; i < m.size(); ++i)
@@ -395,7 +391,7 @@ private:
     }
 
 
-    bool is_elements_equal(const Matrix& m, ex::IntSelector<ex::MathType<T>::kUserType>) const
+    bool is_elements_equal(const Matrix& m, ex::selector<ex::math_type<T>::kUserType>) const
     {
         // user type
         for (index_t i = 0; i < m.size(); ++i)
