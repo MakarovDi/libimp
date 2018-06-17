@@ -39,6 +39,7 @@
 	- [ ] min/max filter;
 	- [ ] bilateral filter;
 	- [ ] guided filter;
+	- [ ] integral image + box filter compatibility;
 	
 * raw image processing `imp/raw`:
 	- [ ] class for CFA;
