@@ -1,0 +1,68 @@
+#ifndef    IMP_IMAGE_OPERATOR_HEADER
+#   define IMP_IMAGE_OPERATOR_HEADER
+
+
+#include "imp/image/image"
+#include "imp/common/matrix"
+
+
+namespace imp
+{
+
+
+namespace internal
+{
+
+    template <typename T>
+    using ReduceFunction = T (*)(const T& c0, const T& c1, const T& c2);
+
+
+    template <typename T, typename Alias>
+    Matrix<T> color_reduce(const Image<T, Alias>& image, ReduceFunction<T> reduce)
+    {
+        using ColorPlane = typename Image<T, Alias>::ColorPlane;
+
+        Matrix<T> result(image.width(), image.height());
+
+        for (index_t i = 0; i < image.width()*image.height(); ++i)
+        {
+            T c0 = image(i, ColorPlane(0));
+            T c1 = image(i, ColorPlane(1));
+            T c2 = image(i, ColorPlane(2));
+
+            result(i) = reduce( c0, c1, c2 );
+        }
+
+        return result;
+    }
+
+}
+
+
+template <typename T, typename Alias>
+Matrix<T> min(const Image<T, Alias>& image)
+{
+    internal::ReduceFunction<T> reduce_min = [](const T& c0, const T& c1, const T& c2)
+    {
+        return std::min(c0, std::min(c1, c2) );
+    };
+
+    return internal::color_reduce(image, reduce_min);
+}
+
+
+template <typename T, typename Alias>
+Matrix<T> max(const Image<T, Alias>& image)
+{
+    internal::ReduceFunction<T> reduce_max = [](const T& c0, const T& c1, const T& c2)
+    {
+        return std::max(c0, std::max(c1, c2) );
+    };
+
+    return internal::color_reduce(image, reduce_max);
+}
+
+
+
+}
+#endif // IMP_IMAGE_OPERATOR_HEADER
