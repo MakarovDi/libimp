@@ -49,7 +49,7 @@ namespace ppm
 
     template <typename T>
     static void save(std::ostream& binary_stream,
-                     const imp::RgbImage<T>& rgb,
+                     const RgbImage<T>& rgb,
                      T white_level,
                      T black_level = T(0))
     {
@@ -107,7 +107,7 @@ namespace ppm
 
     template <typename T>
     static void save(const char* file_name,
-                     const imp::RgbImage<T>& rgb,
+                     const RgbImage<T>& rgb,
                      T white_level,
                      T black_level = T(0))
     {
@@ -116,14 +116,14 @@ namespace ppm
         if (!ppm.is_open())
             throw std::runtime_error("failed to create file");
 
-        imp::ppm::save(ppm, rgb, white_level, black_level);
+        ppm::save(ppm, rgb, white_level, black_level);
     };
 
 
     template <typename T>
-    static imp::RgbImage<T> load(std::istream& binary_stream,
-                                             T white_level,
-                                             T black_level = T(0))
+    static RgbImage<T> load(std::istream& binary_stream,
+                                        T white_level,
+                                        T black_level = T(0))
     {
         index_t  width;
         index_t  height;
@@ -142,7 +142,7 @@ namespace ppm
         if (width < 0 || height < 0 || (ppm_range != 255 && ppm_range != 65535))
             throw std::runtime_error("wrong file format");
 
-        imp::RgbImage<T> image(width, height);
+        RgbImage<T> image(width, height);
 
         bool is_16bit_ppm = ppm_range == 65535;
         T    output_range = white_level - black_level;
@@ -169,7 +169,7 @@ namespace ppm
 
 
     template <typename T>
-    static imp::RgbImage<T> load(const char* file_name,
+    static RgbImage<T> load(const char* file_name,
                                            T white_level,
                                            T black_level = T(0))
     {
@@ -178,7 +178,7 @@ namespace ppm
         if (!ppm.is_open())
             throw std::runtime_error("can't open file");
 
-        return imp::ppm::load<T>(ppm, white_level, black_level);
+        return ppm::load<T>(ppm, white_level, black_level);
     }
 
 }
