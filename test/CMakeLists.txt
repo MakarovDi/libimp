@@ -7,7 +7,8 @@ add_executable(ImpTests
     common/matrix_operator.cpp
     common/rgb_image.cpp
     io/ppm.cpp
-    io/pgm.cpp)
+    io/pgm.cpp
+    filter/minmax.cpp)
 
 
 target_link_libraries(ImpTests PRIVATE ex gtest gtest_main)

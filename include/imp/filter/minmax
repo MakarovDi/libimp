@@ -1,0 +1,195 @@
+#ifndef    IMP_FILTER_MINMAX_HEADER
+#   define IMP_FILTER_MINMAX_HEADER
+
+#include <ex/window>
+#include <ex/utility>
+
+#include "imp/common/matrix"
+
+//
+// O(M*N*r) implementation of 2D Min/Max filter
+//
+//      M x N - matrix, r - filter radius
+//
+// Usage:
+//
+//   1)  auto min_matrix = imp::MinFilter(4).apply(matrix);
+//
+//   2)  imp::MinFilter(4).apply(ex::in_place, matrix);
+//
+//
+// Note:
+//
+//   implementation with O(M*N*log(r)) possible, but
+//   maintaining queue for log(r) search absorb all
+//   time advantage and benefit will appear only
+//   on really large radiuses.
+//
+//
+
+namespace imp
+{
+
+
+namespace internal
+{
+
+
+// TODO: remove when AccessModifier for Matrix will be implemented
+
+template<typename T>
+using AccessModifier = T& (&)(Matrix<T>&, index_t x, index_t y);
+
+
+template <typename T>
+T& transpose(Matrix<T>& m, index_t x, index_t y)
+{
+    return m(y, x);
+}
+
+
+template <typename T>
+const T& get_extremum(const ex::MinWindow<T>& w)
+{
+    return w.minimum();
+}
+
+
+template <typename T>
+const T& get_extremum(const ex::MaxWindow<T>& w)
+{
+    return w.maximum();
+}
+
+
+template <typename T, typename Window, AccessModifier<T> item>
+void extremum_1d_filter(const Matrix<T>& data, index_t w, index_t h, Matrix<T>& out, index_t radius)
+{
+    index_t window_size = 2 * radius + 1;
+    index_t initial     = std::min(radius, w-1);
+
+    for (index_t y = 0; y < h; ++y)
+    {
+        Window sliding_window(window_size, data.ptr() + y*data.cols(), w);
+
+        // fill window
+        for (index_t i = 0; i < initial; ++i)
+        {
+            sliding_window.next();
+        }
+
+        // fill result
+        for (index_t out_x = 0; out_x < w; ++out_x)
+        {
+            sliding_window.next();
+            item(out, out_x, y) = get_extremum(sliding_window);
+        }
+    }
+}
+
+
+} // internal
+
+
+
+class MinFilter final
+{
+
+public:
+    explicit MinFilter(index_t radius) : m_radius(radius)
+    {
+    }
+
+public:
+    index_t radius() const { return m_radius; }
+
+public:
+    template <typename T>
+    Matrix<T> apply(const Matrix<T>& matrix)
+    {
+        using namespace internal;
+
+        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+
+        Matrix<T> tmp(tmp_size, tmp_size);
+        Matrix<T> result(matrix.cols(), matrix.rows());
+
+        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
+        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), result, m_radius);
+
+        return result;
+    }
+
+
+    template <typename T>
+    Matrix<T>& apply(ex::in_place_t, Matrix<T>& matrix)
+    {
+        using namespace internal;
+
+        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+
+        Matrix<T> tmp(tmp_size, tmp_size);
+
+        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
+        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), matrix, m_radius);
+
+        return matrix;
+    }
+
+private:
+    index_t m_radius;
+};
+
+
+
+class MaxFilter final
+{
+
+public:
+    explicit MaxFilter(index_t radius) : m_radius(radius)
+    {
+    }
+
+public:
+    index_t radius() const { return m_radius; }
+
+public:
+    template <typename T>
+    Matrix<T> apply(const Matrix<T>& matrix)
+    {
+        using namespace internal;
+
+        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+
+        Matrix<T> tmp(tmp_size, tmp_size);
+        Matrix<T> result(matrix.cols(), matrix.rows());
+
+        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
+        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), result, m_radius);
+
+        return result;
+    }
+
+
+    template <typename T>
+    Matrix<T>& apply(ex::in_place_t, Matrix<T>& matrix)
+    {
+        using namespace internal;
+
+        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+
+        Matrix<T> tmp(tmp_size, tmp_size);
+
+        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
+        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), matrix, m_radius);
+
+        return matrix;
+    }
+
+private:
+    index_t m_radius;
+};
+
+
+}
+#endif // IMP_FILTER_MINMAX_HEADER
