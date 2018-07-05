@@ -7,6 +7,10 @@
 #include "imp/common/matrix"
 
 
+namespace imp
+{
+
+
 template <typename C, typename T>
 std::basic_ostream<C>& operator<<(std::basic_ostream<C>& stream, const Matrix<T>& m)
 {
@@ -44,4 +48,5 @@ Matrix<T> operator-(const Matrix<T>& m1, const Matrix<T>& m2)
 }
 
 
+}
 #endif

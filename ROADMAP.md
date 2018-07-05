@@ -1,5 +1,11 @@
 # Roadmap
 
+## 07.2018
+
+* image filtering `filter`:
+	- [ ] min/max filter approximation;
+
+
 ## 08.04.2018
 
 * `common/matrix`:      
@@ -36,7 +42,7 @@
 	- [ ] box filter;
 	- [ ] gaussian filter;
 	- [ ] median filter;
-	- [ ] min/max filter;
+	- [x] min/max filter;
 	- [ ] bilateral filter;
 	- [ ] guided filter;
 	- [ ] integral image + box filter compatibility;
