@@ -28,7 +28,7 @@ TYPED_TEST(MatrixTests, default_ctor)
     ASSERT_EQ(m.rows(), 3);
     ASSERT_EQ(m.cols(), 2);
     ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.mem_size(), 3*2*sizeof(TypeParam));
+    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
 }
 
 
@@ -168,7 +168,7 @@ TYPED_TEST(MatrixTests, copy_ctor)
     ASSERT_EQ(m2.size(), m.size());
     ASSERT_EQ(m2.rows(), m.rows());
     ASSERT_EQ(m2.cols(), m.cols());
-    ASSERT_EQ(m2.mem_size(), m.mem_size());
+    ASSERT_EQ(m2.memory_size(), m.memory_size());
 
     for (index_t i = 0; i < m.size(); ++i)
     {
@@ -185,7 +185,7 @@ TYPED_TEST(MatrixTests, copy_ctor)
     ASSERT_EQ(m4.size(), m1.size());
     ASSERT_EQ(m4.rows(), m1.rows());
     ASSERT_EQ(m4.cols(), m1.cols());
-    ASSERT_EQ(m4.mem_size(), m1.mem_size());
+    ASSERT_EQ(m4.memory_size(), m1.memory_size());
 
     for (index_t i = 0; i < m1.size(); ++i)
     {
@@ -264,7 +264,7 @@ TYPED_TEST(MatrixTests, copy_operator)
     ASSERT_EQ(m1.size(), m.size());
     ASSERT_EQ(m1.rows(), m.rows());
     ASSERT_EQ(m1.cols(), m.cols());
-    ASSERT_EQ(m1.mem_size(), m.mem_size());
+    ASSERT_EQ(m1.memory_size(), m.memory_size());
 
     for (index_t i = 0; i < m.size(); ++i)
     {
@@ -284,7 +284,7 @@ TYPED_TEST(MatrixTests, copy_operator)
     ASSERT_EQ(m3.size(), m2.size());
     ASSERT_EQ(m3.rows(), m2.rows());
     ASSERT_EQ(m3.cols(), m2.cols());
-    ASSERT_EQ(m3.mem_size(), m2.mem_size());
+    ASSERT_EQ(m3.memory_size(), m2.memory_size());
 
     for (index_t i = 0; i < m2.size(); ++i)
     {
@@ -355,7 +355,7 @@ TYPED_TEST(MatrixTests, mem_shrinkage_test)
     Matrix<TypeParam> m1(size, 1);
 
     m1 = m;
-    ASSERT_EQ(m1.mem_size(), size * index_t(sizeof(TypeParam)));
+    ASSERT_EQ(m1.memory_size(), size * index_t(sizeof(TypeParam)));
 
     // test memory shrinkage
     size = Matrix<TypeParam>::Config::kMemShrinkageScale*m.size() + 1;
@@ -363,7 +363,7 @@ TYPED_TEST(MatrixTests, mem_shrinkage_test)
     Matrix<TypeParam> m2(size, 1);
 
     m2 = m;
-    ASSERT_EQ(m2.mem_size(), m.mem_size());
+    ASSERT_EQ(m2.memory_size(), m.memory_size());
 }
 
 
@@ -382,14 +382,14 @@ TYPED_TEST(MatrixTests, move_ctor)
     ASSERT_EQ(m2.size(), 6);
     ASSERT_EQ(m2.rows(), 2);
     ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
 
     ASSERT_EQ(m.ptr(), nullptr);
     ASSERT_FALSE(m.is_own_memory());
     ASSERT_EQ(m.size(), 0);
     ASSERT_EQ(m.rows(), 0);
     ASSERT_EQ(m.cols(), 0);
-    ASSERT_EQ(m.mem_size(), 0);
+    ASSERT_EQ(m.memory_size(), 0);
 
     // test copy mode
     Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
@@ -403,14 +403,14 @@ TYPED_TEST(MatrixTests, move_ctor)
     ASSERT_EQ(m3.size(), 6);
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
 
     ASSERT_EQ(m1.ptr(), nullptr);
     ASSERT_FALSE(m1.is_own_memory());
     ASSERT_EQ(m1.size(), 0);
     ASSERT_EQ(m1.rows(), 0);
     ASSERT_EQ(m1.cols(), 0);
-    ASSERT_EQ(m1.mem_size(), 0);
+    ASSERT_EQ(m1.memory_size(), 0);
 }
 
 
@@ -425,7 +425,7 @@ TYPED_TEST(MatrixTests, move_rvalue_ctor)
     ASSERT_EQ(m2.size(), 6);
     ASSERT_EQ(m2.rows(), 2);
     ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
 
     Matrix<TypeParam> m3(Matrix<TypeParam>(3, 2, ptr, RawMemory::kCopy));
     ASSERT_TRUE(m3.ptr() != ptr);
@@ -433,7 +433,7 @@ TYPED_TEST(MatrixTests, move_rvalue_ctor)
     ASSERT_EQ(m3.size(), 6);
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
 }
 
 
@@ -455,14 +455,14 @@ TYPED_TEST(MatrixTests, move_operator)
     ASSERT_EQ(m.size(), 0);
     ASSERT_EQ(m.rows(), 0);
     ASSERT_EQ(m.cols(), 0);
-    ASSERT_EQ(m.mem_size(), 0);
+    ASSERT_EQ(m.memory_size(), 0);
 
     ASSERT_EQ(m2.ptr(), ptr);
     ASSERT_FALSE(m2.is_own_memory());
     ASSERT_EQ(m2.size(), 6);
     ASSERT_EQ(m2.rows(), 2);
     ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
 
     // test copy mode
     Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
@@ -479,14 +479,14 @@ TYPED_TEST(MatrixTests, move_operator)
     ASSERT_EQ(m1.size(), 0);
     ASSERT_EQ(m1.rows(), 0);
     ASSERT_EQ(m1.cols(), 0);
-    ASSERT_EQ(m1.mem_size(), 0);
+    ASSERT_EQ(m1.memory_size(), 0);
 
     ASSERT_EQ(m3.ptr(), p);
     ASSERT_TRUE(m3.is_own_memory());
     ASSERT_EQ(m3.size(), 6);
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.mem_size(), 6 * sizeof(TypeParam));
+    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
 }
 
 
@@ -500,7 +500,7 @@ TYPED_TEST(MatrixTests, from_array_ctor)
     ASSERT_EQ(m.rows(), 3);
     ASSERT_EQ(m.cols(), 2);
     ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.mem_size(), 3*2*sizeof(TypeParam));
+    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
 
     for (index_t i = 0; i < m.size(); ++i)
     {
@@ -518,7 +518,7 @@ TYPED_TEST(MatrixTests, vector_ctor)
     ASSERT_EQ(m.rows(), 3);
     ASSERT_EQ(m.cols(), 1);
     ASSERT_EQ(m.size(), 3*1);
-    ASSERT_EQ(m.mem_size(), 3*1*sizeof(TypeParam));
+    ASSERT_EQ(m.memory_size(), 3*1*sizeof(TypeParam));
 
     for (index_t i = 0; i < m.size(); ++i)
     {
@@ -537,7 +537,7 @@ TYPED_TEST(MatrixTests, matrix_array_ctor)
     ASSERT_EQ(m.rows(), 2);
     ASSERT_EQ(m.cols(), 3);
     ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.mem_size(), 3*2*sizeof(TypeParam));
+    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
 
     for (index_t i = 0; i < m.size(); ++i)
     {

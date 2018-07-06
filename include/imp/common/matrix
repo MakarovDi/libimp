@@ -45,7 +45,7 @@ public:
         m_rows(0),
         m_cols(0),
         m_size(0),
-        m_mem_size(0),
+        m_memory_size(0),
         m_data(nullptr),
         m_ptr(nullptr)
     {
@@ -56,7 +56,7 @@ public:
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
-        m_mem_size(m_size * sizeof(T)),
+        m_memory_size(m_size * sizeof(T)),
         m_data(new T[m_size]),
         m_ptr(m_data.get())
     {
@@ -67,13 +67,13 @@ public:
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
-        m_mem_size(m_size * sizeof(T)),
+        m_memory_size(m_size * sizeof(T)),
         m_data( mem_mode == RawMemory::kCopy ? new T[m_size] : nullptr),
         m_ptr ( mem_mode == RawMemory::kCopy ? m_data.get()  : const_cast<T*>(ptr) )
     {
         if (mem_mode == RawMemory::kCopy)
         {
-            std::memcpy(m_ptr, ptr, size_t(m_mem_size));
+            std::memcpy(m_ptr, ptr, size_t(m_memory_size));
         }
     }
 
@@ -109,7 +109,7 @@ public:
         m_rows(rows),
         m_cols(cols),
         m_size(rows*cols),
-        m_mem_size(m_size * sizeof(T)),
+        m_memory_size(m_size * sizeof(T)),
         m_data(std::move(const_cast<std::unique_ptr<T[]>&>(ptr) )),
         m_ptr(m_data.get())
     {
@@ -131,7 +131,7 @@ public:
 
         mx.m_ptr  = nullptr;
         mx.m_rows = mx.m_cols = 0;
-        mx.m_size = mx.m_mem_size = 0;
+        mx.m_size = mx.m_memory_size = 0;
     }
 
 public:
@@ -196,13 +196,13 @@ public:
         m_size = m.size();
 
         m_data = std::move(m.m_data);
-        m_mem_size = m.mem_size();
+        m_memory_size = m.memory_size();
 
         m_ptr = m.m_ptr;
 
         m.m_ptr  = nullptr;
         m.m_rows = m.m_cols = 0;
-        m.m_size = m.m_mem_size = 0;
+        m.m_size = m.m_memory_size = 0;
 
         return *this;
     }
@@ -261,7 +261,7 @@ public:
     index_t cols() const { return m_cols; }
     index_t size() const { return m_size; }
 
-    index_t mem_size()      const { return m_mem_size;              }
+    index_t memory_size()   const { return m_memory_size;           }
     bool    is_own_memory() const { return m_data.get() != nullptr; }
 
     const T* ptr() const { return m_ptr; }
@@ -325,9 +325,9 @@ public:
     }
 
 public:
-    static Matrix<T> fill(index_t cols, index_t rows, const T& value)
+    static Matrix fill(index_t cols, index_t rows, const T& value)
     {
-        Matrix<T> matrix(cols, rows);
+        Matrix matrix(cols, rows);
 
         for (index_t i = 0; i < matrix.size(); ++i)
         {
@@ -338,32 +338,30 @@ public:
     }
 
 
-    static Matrix<T> zero(index_t cols, index_t rows)
+    static Matrix zero(index_t cols, index_t rows)
     {
-        return Matrix<T>::fill(cols, rows, T(0));
+        return Matrix::fill(cols, rows, T(0));
     }
 
 
-    static Matrix<T> ones(index_t cols, index_t rows)
+    static Matrix ones(index_t cols, index_t rows)
     {
-        return Matrix<T>::fill(cols, rows, T(1));
+        return Matrix::fill(cols, rows, T(1));
     }
 
 
-    static Matrix<T> random(index_t cols, index_t rows)
+    static Matrix random(index_t cols, index_t rows)
     {
-        ex::uniform_distribution<T> distrubution;
-
-        return Matrix<T>::random(cols, rows, distrubution);
+        return Matrix::random(cols, rows, ex::uniform_distribution<T>());
     }
 
 
     template <typename D>
-    static Matrix<T> random(index_t cols, index_t rows, D distrubution)
+    static Matrix random(index_t cols, index_t rows, D distrubution)
     {
         std::default_random_engine generator;
 
-        Matrix<T> matrix(cols, rows);
+        Matrix matrix(cols, rows);
 
         for (index_t i = 0; i < matrix.size(); ++i)
         {
@@ -378,11 +376,11 @@ private:
     {
         index_t mem_size = rows*cols* sizeof(T);
 
-        if (m_mem_size < mem_size || m_mem_size > mem_size*kMemShrinkageScale)
+        if (m_memory_size < mem_size || m_memory_size > mem_size*kMemShrinkageScale)
         {
             m_data.reset(new T[mem_size]);
             m_ptr = m_data.get();
-            m_mem_size = mem_size;
+            m_memory_size = mem_size;
         }
 
         m_rows = rows;
@@ -459,7 +457,7 @@ private:
     index_t m_cols;
 
     index_t m_size;
-    index_t m_mem_size;
+    index_t m_memory_size;
 
     std::unique_ptr<T[]> m_data;
 
