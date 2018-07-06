@@ -1,0 +1,2 @@
+[submodule "external/libex"]
+	url = https://github.com/MakarovDi/libex.git
