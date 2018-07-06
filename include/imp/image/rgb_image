@@ -13,9 +13,9 @@ namespace imp
 
 
 template <typename T>
-struct RgbAlias
+struct RgbFacade
 {
-    using Image = Image<T, RgbAlias>;
+    using Image = Image<T, RgbFacade>;
 public:
     enum ColorPlane : index_t
     {
@@ -25,56 +25,43 @@ public:
         kCount,
     };
 
+public:
+    const T& r(index_t index)        const { return self().color(index, kR); }
+          T& r(index_t index)              { return self().color(index, kR); }
+    const T& r(index_t x, index_t y) const { return self().color(x, y,  kR); }
+          T& r(index_t x, index_t y)       { return self().color(x, y,  kR); }
 
-    inline const T& r(index_t index)        const { return m_r_plane[index]; }
-    inline       T& r(index_t index)              { return m_r_plane[index]; }
-    inline const T& r(index_t x, index_t y) const { return m_r_plane(x, y);  }
-    inline       T& r(index_t x, index_t y)       { return m_r_plane(x, y);  }
+    const T& g(index_t index)        const { return self().color(index, kG); }
+          T& g(index_t index)              { return self().color(index, kG); }
+    const T& g(index_t x, index_t y) const { return self().color(x, y,  kG); }
+          T& g(index_t x, index_t y)       { return self().color(x, y,  kG); }
 
-    inline const T& g(index_t index)        const { return m_g_plane[index]; }
-    inline       T& g(index_t index)              { return m_g_plane[index]; }
-    inline const T& g(index_t x, index_t y) const { return m_g_plane(x, y);  }
-    inline       T& g(index_t x, index_t y)       { return m_g_plane(x, y);  }
+    const T& b(index_t index)        const { return self().color(index, kB); }
+          T& b(index_t index)              { return self().color(index, kB); }
+    const T& b(index_t x, index_t y) const { return self().color(x, y,  kB); }
+          T& b(index_t x, index_t y)       { return self().color(x, y,  kB); }
 
-    inline const T& b(index_t index)        const { return m_b_plane[index]; }
-    inline       T& b(index_t index)              { return m_b_plane[index]; }
-    inline const T& b(index_t x, index_t y) const { return m_b_plane(x, y);  }
-    inline       T& b(index_t x, index_t y)       { return m_b_plane(x, y);  }
+    const Matrix<T>& r_plane() const { return self().plane(kR); }
+          Matrix<T>  r_plane()       { return self().plane(kR); }
 
-    const Matrix<T>& r_plane() const { return m_r_plane; }
-          Matrix<T>  r_plane()       { return Matrix<T>(m_r_plane.cols(), m_r_plane.rows(), m_r_plane.ptr(), RawMemory::kReuse); }
+    const Matrix<T>& g_plane() const { return self().plane(kG); }
+          Matrix<T>  g_plane()       { return self().plane(kG); }
 
-    const Matrix<T>& g_plane() const { return m_g_plane; }
-          Matrix<T>  g_plane()       { return Matrix<T>(m_g_plane.cols(), m_g_plane.rows(), m_g_plane.ptr(), RawMemory::kReuse); }
-
-    const Matrix<T>& b_plane() const { return m_b_plane; }
-          Matrix<T>  b_plane()       { return Matrix<T>(m_b_plane.cols(), m_b_plane.rows(), m_b_plane.ptr(), RawMemory::kReuse); }
-
-
-    RgbAlias(RgbAlias&&) noexcept = default;
-    RgbAlias& operator=(RgbAlias&&) noexcept = default;
+    const Matrix<T>& b_plane() const { return self().plane(kB); }
+          Matrix<T>  b_plane()       { return self().plane(kB); }
 
 protected:
-    RgbAlias()  { }
-    ~RgbAlias() { } // non-virtual destructor
-
-protected:
-    void init_alias(Image& img)
-    {
-        m_r_plane = Matrix<T>(img.width(), img.height(), img.ptr(),                      RawMemory::kReuse);
-        m_g_plane = Matrix<T>(img.width(), img.height(), img.ptr() + img.plane_size(),   RawMemory::kReuse);
-        m_b_plane = Matrix<T>(img.width(), img.height(), img.ptr() + 2*img.plane_size(), RawMemory::kReuse);
-    }
+    RgbFacade()  { }
+    ~RgbFacade() { } // non-virtual destructor
 
 private:
-    Matrix<T> m_r_plane;
-    Matrix<T> m_g_plane;
-    Matrix<T> m_b_plane;
+    const Image& self() const { return *static_cast<const Image*>(this); }
+    Image&       self()       { return *static_cast<Image*>(this);       }
 };
 
 
 template <typename T>
-using RgbImage = Image<T, RgbAlias<T>>;
+using RgbImage = Image<T, RgbFacade<T>>;
 
 
 }

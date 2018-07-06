@@ -13,29 +13,28 @@ namespace imp
 
 
 template <class T>
-struct DefaultAlias;
+struct EmptyFacade;
 
 
-// TODO: change [class PlaneAliases = DefaultAlias<T, IndexCheckPolicy>] -> [template <class, class> class PlaneAliases = DefaultAlias]
+// TODO: change [class Facade = EmptyFacade<T>] -> [template <class> class Facade = EmptyFacade]
 // TODO: when msvc grow up to it. msvc 2015 can't trace it
 
 template
 <
     class T,
-    class Alias = DefaultAlias<T>
+    class Facade = EmptyFacade<T>
 >
-class Image final : public Alias
+class Image final : public Facade
 {
     using Matrix = Matrix<T>;
 public:
-
     Image() :
         m_width(0),
         m_height(0),
         m_plane_size(0),
         m_data()
     {
-        this->init_alias(*this);
+        init_planes();
     }
 
 
@@ -45,7 +44,7 @@ public:
         m_plane_size(width*height),
         m_data(3*m_plane_size, 1)
     {
-        this->init_alias(*this);
+        init_planes();
     }
 
 
@@ -55,7 +54,7 @@ public:
         m_plane_size(width*height),
         m_data(3*m_plane_size, 1, ptr, mem_mode)
     {
-        this->init_alias(*this);
+        init_planes();
     }
 
 
@@ -65,7 +64,7 @@ public:
     {
     }
 
-
+public:
     Image(const Image& image) : Image(image.width(), image.height())
     {
         m_data = image.m_data;
@@ -82,12 +81,12 @@ public:
 
         m_data = rgb.m_data;
 
-        this->init_alias(*this);
+        init_planes();
 
         return *this;
     }
 
-
+public:
     Image(Image&&) noexcept = default;
     Image& operator=(Image&&) noexcept = default;
 
@@ -105,38 +104,62 @@ public:
         return m_data == img.m_data;
     }
 
-
     bool operator!=(const Image& img) const { return !operator==(img); }
 
 public:
-    index_t width()      const { return m_width;  }
-    index_t height()     const { return m_height; }
+    index_t width()       const { return m_width;  }
+    index_t height()      const { return m_height; }
 
-    index_t plane_size() const { return m_plane_size;      }
-    index_t mem_size()   const { return m_data.mem_size(); }
+    index_t plane_size()  const { return m_plane_size;         }
+    index_t total_size()  const { return m_data.size();        }
+    index_t memory_size() const { return m_data.memory_size(); }
 
     const T* ptr() const { return m_data.ptr(); }
     T*       ptr()       { return m_data.ptr(); }
 
-    bool     is_own_memory() const { return m_data.is_own_memory(); }
+    bool is_own_memory()  const { return m_data.is_own_memory(); }
 
 public:
-    using ColorPlane = typename Alias::ColorPlane;
+    using ColorPlane = typename Facade::ColorPlane;
 
-    inline const T& color(index_t index,        ColorPlane color_plane) const { return m_data[index + color_plane*m_plane_size]; }
-    inline       T& color(index_t index,        ColorPlane color_plane)       { return m_data[index + color_plane*m_plane_size]; }
-    inline const T& color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane);        }
-    inline       T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane);        }
+public:
+    const T& color(index_t index,        ColorPlane color_plane) const { return m_plane[color_plane][index];       }
+          T& color(index_t index,        ColorPlane color_plane)       { return m_plane[color_plane][index];       }
+    const T& color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane); }
+          T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane); }
 
-    inline const T& operator()(index_t index,        ColorPlane color_plane) const { return color(index, color_plane); }
-    inline       T& operator()(index_t index,        ColorPlane color_plane)       { return color(index, color_plane); }
-    inline const T& operator()(index_t x, index_t y, ColorPlane color_plane) const { return color(x, y, color_plane);  }
-    inline       T& operator()(index_t x, index_t y, ColorPlane color_plane)       { return color(x, y, color_plane);  }
+    const T& operator()(index_t index,        ColorPlane color_plane) const { return color(index, color_plane); }
+          T& operator()(index_t index,        ColorPlane color_plane)       { return color(index, color_plane); }
+    const T& operator()(index_t x, index_t y, ColorPlane color_plane) const { return color(x, y, color_plane);  }
+          T& operator()(index_t x, index_t y, ColorPlane color_plane)       { return color(x, y, color_plane);  }
 
-    inline const T& operator()(index_t index) const { return m_data[index]; }
-    inline       T& operator()(index_t index)       { return m_data[index]; }
-    inline const T& operator[](index_t index) const { return m_data[index]; }
-    inline       T& operator[](index_t index)       { return m_data[index]; }
+    const T& operator()(index_t index) const { return m_data[index]; }
+          T& operator()(index_t index)       { return m_data[index]; }
+    const T& operator[](index_t index) const { return m_data[index]; }
+          T& operator[](index_t index)       { return m_data[index]; }
+
+
+    const Matrix& plane(index_t plane_index) const
+    {
+        return m_plane[plane_index];
+    }
+
+    Matrix plane(index_t plane_index)
+    {
+        //
+        // create proxy matrix object: without data copy and pointer to plane data
+        // to protect internal plane matrix from assigment operator (reallocation case)
+        //
+        return Matrix(width(), height(), m_plane[plane_index].ptr(), RawMemory::kReuse);
+    }
+
+private:
+    void init_planes()
+    {
+        m_plane[0] = Matrix(width(), height(), ptr(),                  RawMemory::kReuse);
+        m_plane[1] = Matrix(width(), height(), ptr() +   plane_size(), RawMemory::kReuse);
+        m_plane[2] = Matrix(width(), height(), ptr() + 2*plane_size(), RawMemory::kReuse);
+    }
 
 private:
     index_t m_width;
@@ -144,14 +167,15 @@ private:
     index_t m_plane_size;
 
     Matrix m_data;
+    Matrix m_plane[3];
 };
 
 
 
 template <class T>
-struct DefaultAlias
+struct EmptyFacade
 {
-    using Image = Image<T, DefaultAlias>;
+    using Image = Image<T, EmptyFacade>;
 
 
     enum ColorPlane : index_t
@@ -163,12 +187,10 @@ struct DefaultAlias
     };
 
 protected:
-    DefaultAlias()  {}
-    ~DefaultAlias() {} // non-virtual destructor
-
-protected:
-    void init_alias(Image&) { }
+    EmptyFacade()  {}
+    ~EmptyFacade() {} // non-virtual destructor
 };
+
 
 }
 

@@ -8,7 +8,7 @@ using namespace imp;
 using testing::Types;
 
 
-template <typename T> class RgbImageTypeMixture: public ::testing::Test { };
+template <typename T> class rgb_image: public ::testing::Test { };
 
 
 using MathTypes = Types
@@ -17,10 +17,10 @@ using MathTypes = Types
     float, double, long double
 >;
 
-TYPED_TEST_CASE(RgbImageTypeMixture, MathTypes);
+TYPED_TEST_CASE(rgb_image, MathTypes);
 
 
-TYPED_TEST(RgbImageTypeMixture, default_ctor)
+TYPED_TEST(rgb_image, default_ctor)
 {
     RgbImage<TypeParam> img(2, 3);
     ASSERT_TRUE(img.is_own_memory());
@@ -28,9 +28,9 @@ TYPED_TEST(RgbImageTypeMixture, default_ctor)
     ASSERT_EQ(img.height(), 3);
     ASSERT_EQ(img.width(), 2);
     ASSERT_EQ(img.plane_size(), 3*2);
-    ASSERT_EQ(img.mem_size(), 3*3*2*sizeof(TypeParam));
+    ASSERT_EQ(img.memory_size(), 3*3*2*sizeof(TypeParam));
 
-    memset(img.ptr(), 0, size_t(img.mem_size()));
+    memset(img.ptr(), 0, size_t(img.memory_size()));
 
     ASSERT_TRUE(img.r_plane() == img.g_plane());
     ASSERT_TRUE(img.r_plane() == img.b_plane());
@@ -41,7 +41,7 @@ TYPED_TEST(RgbImageTypeMixture, default_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
+TYPED_TEST(rgb_image, raw_ptr_copy_ctor)
 {
     using T = TypeParam;
 
@@ -77,7 +77,7 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
+TYPED_TEST(rgb_image, raw_ptr_move_ctor)
 {
     using T = TypeParam;
 
@@ -113,7 +113,7 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
+TYPED_TEST(rgb_image, from_array_ctor)
 {
     using T = TypeParam;
 
@@ -152,7 +152,7 @@ TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, copy_ctor)
+TYPED_TEST(rgb_image, copy_ctor)
 {
     using T = TypeParam;
 
@@ -191,7 +191,7 @@ TYPED_TEST(RgbImageTypeMixture, copy_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, copy_operator)
+TYPED_TEST(rgb_image, copy_operator)
 {
     using T = TypeParam;
 
@@ -232,7 +232,7 @@ TYPED_TEST(RgbImageTypeMixture, copy_operator)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, move_ctor)
+TYPED_TEST(rgb_image, move_ctor)
 {
     using T = TypeParam;
 
@@ -267,11 +267,11 @@ TYPED_TEST(RgbImageTypeMixture, move_ctor)
 
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.mem_size(), 0);
+    ASSERT_EQ(img.memory_size(), 0);
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, move_operator)
+TYPED_TEST(rgb_image, move_operator)
 {
     using T = TypeParam;
 
@@ -308,11 +308,11 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
 
     ASSERT_FALSE(img.is_own_memory());
     ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.mem_size(), 0);
+    ASSERT_EQ(img.memory_size(), 0);
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, indexing)
+TYPED_TEST(rgb_image, indexing)
 {
     using T = TypeParam;
 
@@ -376,7 +376,7 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, planes)
+TYPED_TEST(rgb_image, planes_access)
 {
     using T = TypeParam;
 
@@ -433,7 +433,7 @@ TYPED_TEST(RgbImageTypeMixture, planes)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, equality_operator)
+TYPED_TEST(rgb_image, equality_operator)
 {
     using T = TypeParam;
 
