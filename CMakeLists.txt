@@ -75,7 +75,7 @@ set_target_properties(imp PROPERTIES LINKER_LANGUAGE CXX
                                      CXX_STANDARD 14
                                      CXX_STANDARD_REQUIRED ON)
 
-# populate ex headers
+# populate headers
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # initialize external libs
