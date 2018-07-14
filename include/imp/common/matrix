@@ -16,8 +16,57 @@
 #include <ex/random>
 
 
+#define EIGEN_MATRIX_PLUGIN "internal/matrix_plugin.hpp"
+
+#ifndef _MSC_VER
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wattributes"
+#   include <Eigen/Core>
+#   pragma GCC diagnostic pop
+#else
+#   include <Eigen/Core>
+#endif
+
+
 namespace imp
 {
+
+
+
+namespace beta
+{
+
+template
+<
+    typename T,
+    int Rows = Eigen::Dynamic,
+    int Cols = Eigen::Dynamic,
+    int MaxRows = Rows,
+    int MaxCols = Cols,
+    int Options = Eigen::RowMajor
+>
+using Matrix = Eigen::Matrix<T, Rows, Cols, Options, MaxRows, MaxCols>;
+
+
+template
+<
+    typename T,
+    int Rows = Eigen::Dynamic,
+    int MaxRows = Rows
+>
+using Vector = Matrix<T, Rows, 1, MaxRows, 1, Eigen::ColMajor>;
+
+
+template
+<
+    typename T,
+    int Cols = Eigen::Dynamic,
+    int MaxCols = Cols
+>
+using RowVector = Matrix<T, 1, Cols, 1, MaxCols, Eigen::RowMajor>;
+
+
+}
 
 
 enum RawMemory

@@ -44,10 +44,10 @@ endif()
 configure_file (
     ${PROJECT_SOURCE_DIR}/config.in
     ${PROJECT_BINARY_DIR}/include/imp/config
-    @ONLY                                          # replace VAR with pattern @VAR@ only (not ${VAR})
+    @ONLY                                              # replace VAR with pattern @VAR@ only (not ${VAR})
 )
-add_definitions("-DHAVE_CONFIG_H")                 # define HAVE_CONFIG_H for project
-include_directories(${PROJECT_BINARY_DIR}/include) # for config.h using
+add_definitions("-DHAVE_CONFIG_H")                     # define HAVE_CONFIG_H for project
+include_directories(${PROJECT_BINARY_DIR}/include)     # for config.h using
 
 # Enumerate source files
 set(SOURCES
@@ -76,6 +76,7 @@ set_target_properties(imp PROPERTIES LINKER_LANGUAGE CXX
                                      CXX_STANDARD_REQUIRED ON)
 
 # populate headers
+target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/src/include) # Eigen plugin
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/external/eigen)
 
