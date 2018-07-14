@@ -66,6 +66,10 @@ template
 using RowVector = Matrix<T, 1, Cols, 1, MaxCols, Eigen::RowMajor>;
 
 
+template<typename PlainObjectType, int MapOptions=Eigen::Unaligned, typename StrideType=Eigen::Stride<0,0>>
+using Map = Eigen::Map<PlainObjectType, MapOptions, StrideType>;
+
+
 }
 
 

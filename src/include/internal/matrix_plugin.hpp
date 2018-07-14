@@ -9,32 +9,41 @@ public:
     template <Index M, Index N>
     explicit Matrix(const _Scalar (&data)[M][N]) : Matrix(M, N)
     {
-        static_assert( (_Rows == Dynamic  && _Cols == Dynamic) ||
-                      ((_Rows != Dynamic  && _Cols != Dynamic) &&
-                       (_Rows == M        && _Cols == N)),
-                       "initialization array and matrix size mismatch");
+        init_matrix(data);
+    }
 
+
+    template <Index M, Index N>
+    Matrix& operator=(const _Scalar (&ptr)[M][N])
+    {
+        if (this->size() == M*N)
+        {
+            this->resize(M, N);
+            init_matrix(ptr);
+        }
+        else
+        {
+            Matrix<_Scalar, Dynamic, Dynamic, _Options, Dynamic, Dynamic> data(ptr);
+            this->operator=(std::move(data));
+        }
+
+        return *this;
+    }
+
+private:
+
+    template <Index M, Index N>
+    void init_matrix(const _Scalar (& data)[M][N])
+    {
         for (Index y = 0; y < M; ++y)
             for (Index x = 0; x < N; ++x)
             {
-                this->coeffRef(y, x) = data[y][x];
+                this->operator()(y, x) = data[y][x];
             }
     }
 
+public:
 
-    // vector initialization
-    template <Index N>
-    Matrix(const _Scalar (&data)[N]) : Matrix(N)
-    {
-       static_assert( (_Rows == 1 && (_Cols == N || _Cols == Dynamic)) ||
-                      (_Cols == 1 && (_Rows == N || _Rows == Dynamic)),
-                       "initialization array and vector size mismatch");
-
-        for (Index i = 0; i < N; ++i)
-        {
-            this->coeffRef(i) = data[i];
-        }
-    }
 
 
 #endif
