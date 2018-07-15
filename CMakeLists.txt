@@ -60,7 +60,6 @@ set(HEADERS
     include/imp/io/ppm
     include/imp/io/pgm
     include/imp/common/matrix
-    include/imp/common/operator
     include/imp/image/rgb_image
     include/imp/image/image
     include/imp/image/operator
