@@ -4,7 +4,7 @@
 #include <imp/common/matrix>
 
 
-using namespace imp::beta;
+using namespace imp;
 using testing::Types;
 
 
