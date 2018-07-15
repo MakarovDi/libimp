@@ -16,7 +16,7 @@
 #include <ex/random>
 
 
-#define EIGEN_MATRIX_PLUGIN "internal/matrix_plugin.hpp"
+#define EIGEN_MATRIX_PLUGIN "imp/internal/matrix_plugin"
 
 #ifndef _MSC_VER
 #   pragma GCC diagnostic push
@@ -44,6 +44,20 @@ template
 using Matrix = Eigen::Matrix<T, Rows, Cols, Options, MaxRows, MaxCols>;
 
 
+
+template
+<
+    typename T,
+    int Rows = Eigen::Dynamic,
+    int Cols = Eigen::Dynamic,
+    int MaxRows = Rows,
+    int MaxCols = Cols,
+    int Options = Eigen::RowMajor
+>
+using Array = Eigen::Array<T, Rows, Cols, Options, MaxRows, MaxCols>;
+
+
+
 template
 <
     typename T,
@@ -51,6 +65,7 @@ template
     int MaxRows = Rows
 >
 using Vector = Matrix<T, Rows, 1, MaxRows, 1, Eigen::ColMajor>;
+
 
 
 template
@@ -62,6 +77,7 @@ template
 using RowVector = Matrix<T, 1, Cols, 1, MaxCols, Eigen::RowMajor>;
 
 
+
 template
 <
     typename PlainObjectType,
@@ -69,6 +85,34 @@ template
     typename StrideType = Eigen::Stride<0,0>
 >
 using Map = Eigen::Map<PlainObjectType, MapOptions, StrideType>;
+
+
+//
+// IMatrix: any Matrix, Vector, Expression(m1+m2)
+//     \---> contains matrix operations: prod/dot, norm, LU-/QR-decompositions
+//
+template <typename M>
+using IMatrix = Eigen::MatrixBase<M>;
+
+
+//
+// IArray: any Array and array expressions(a1+a2)
+//     \---> contains element-wise operatios: +, *, cos, abs, ...
+//
+template <typename A>
+using IArray = Eigen::ArrayBase<A>;
+
+
+//
+// IDense: any IMatrix or IArray objects
+//     \---> contains base methods: indexing, resize, comparison, fillers (Zero/Random/Ones/...)
+//
+template <typename D>
+using IDense = Eigen::DenseBase<D>;
+
+
+template <typename D>
+using IReadOnlyDense = Eigen::DenseCoeffsBase<D, Eigen::ReadOnlyAccessors>;
 
 
 }
