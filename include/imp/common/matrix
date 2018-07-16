@@ -38,10 +38,9 @@ template
     int Rows = Eigen::Dynamic,
     int Cols = Eigen::Dynamic,
     int MaxRows = Rows,
-    int MaxCols = Cols,
-    int Options = Eigen::RowMajor
+    int MaxCols = Cols
 >
-using Matrix = Eigen::Matrix<T, Rows, Cols, Options, MaxRows, MaxCols>;
+using Matrix = Eigen::Matrix<T, Rows, Cols, Eigen::RowMajor, MaxRows, MaxCols>;
 
 
 
@@ -51,10 +50,9 @@ template
     int Rows = Eigen::Dynamic,
     int Cols = Eigen::Dynamic,
     int MaxRows = Rows,
-    int MaxCols = Cols,
-    int Options = Eigen::RowMajor
+    int MaxCols = Cols
 >
-using Array = Eigen::Array<T, Rows, Cols, Options, MaxRows, MaxCols>;
+using Array = Eigen::Array<T, Rows, Cols, Eigen::RowMajor, MaxRows, MaxCols>;
 
 
 
@@ -64,7 +62,7 @@ template
     int Rows = Eigen::Dynamic,
     int MaxRows = Rows
 >
-using Vector = Matrix<T, Rows, 1, MaxRows, 1, Eigen::ColMajor>;
+using Vector = Eigen::Matrix<T, Rows, 1, Eigen::ColMajor, MaxRows, 1>;
 
 
 
@@ -74,7 +72,7 @@ template
     int Cols = Eigen::Dynamic,
     int MaxCols = Cols
 >
-using RowVector = Matrix<T, 1, Cols, 1, MaxCols, Eigen::RowMajor>;
+using RowVector = Eigen::Matrix<T, 1, Cols, Eigen::RowMajor, 1, MaxCols>;
 
 
 
