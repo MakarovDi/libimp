@@ -75,7 +75,7 @@ set_target_properties(imp PROPERTIES LINKER_LANGUAGE CXX
                                      CXX_STANDARD_REQUIRED ON)
 
 # populate headers
-target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/src/include) # Eigen plugin
+target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/src/include) # internal headers
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/external/eigen)
 
