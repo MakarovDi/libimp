@@ -16,7 +16,9 @@
 #include <ex/random>
 
 
-#define EIGEN_MATRIX_PLUGIN "imp/internal/matrix_plugin"
+#define EIGEN_MATRIX_PLUGIN     "imp/internal/eigen/matrix_plugin"
+#define EIGEN_MATRIXBASE_PLUGIN "imp/internal/eigen/matrixbase_plugin"
+
 
 #ifndef _MSC_VER
 #   pragma GCC diagnostic push

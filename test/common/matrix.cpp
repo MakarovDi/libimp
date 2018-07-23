@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
+#  define eigen_assert(x) if (!(x)) { throw (std::runtime_error("error")); }
 #include <imp/common/matrix>
 
 
@@ -243,13 +244,13 @@ TYPED_TEST(MatrixTests, copy_array_operator)
         ASSERT_EQ(m(i), T(0));
     }
 
-    m = { { T(1), T(1), T(1), T(1) },
-          { T(1), T(1), T(1), T(1) },
-          { T(1), T(1), T(1), T(1) } };
+    m = { { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) },
+          { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) },
+          { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) } };
 
     ASSERT_TRUE(m.data() != ptr);
     ASSERT_EQ(m.rows(), 3);
-    ASSERT_EQ(m.cols(), 4);
+    ASSERT_EQ(m.cols(), 8);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
@@ -385,4 +386,53 @@ TYPED_TEST(MatrixTests, matrix_array_ctor)
     {
         ASSERT_EQ(m(i), T(i));
     }
+}
+
+
+TYPED_TEST(MatrixTests, matrix_array_assignment)
+{
+    using T = TypeParam;
+
+    Matrix<T> m1(2, 3);
+    T* ptr = m1.data();
+
+    m1 = { {T(0), T(1)},
+           {T(1), T(0)},
+           {T(1), T(1)}};
+    ASSERT_TRUE(m1.data() == ptr);
+    ASSERT_TRUE(m1.cols() == 2);
+    ASSERT_TRUE(m1.rows() == 3);
+    ASSERT_TRUE(m1 == Matrix<T>({ {T(0), T(1)}, {T(1), T(0)}, {T(1), T(1)}}));
+
+
+    m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+           {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} };
+    ASSERT_TRUE(m1.data() != ptr);
+    ASSERT_TRUE(m1.cols() == 8);
+    ASSERT_TRUE(m1.rows() == 2);
+    ASSERT_TRUE(m1 == Matrix<T>( { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)}, {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} }));
+}
+
+
+TYPED_TEST(MatrixTests, map_array_assignment)
+{
+    using T = TypeParam;
+
+    T ptr[] = { 1, 2, 3, 4, 5, 6 };
+    Map<Matrix<T>> m1(ptr, 2, 3);
+
+    ASSERT_THROW((m1 = { {T(0), T(1)},
+                         {T(1), T(0)},
+                         {T(1), T(1)} }), std::runtime_error);
+
+    ASSERT_THROW((m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+                         {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3) } }), std::runtime_error);
+
+
+    ASSERT_NO_THROW((m1 = { {T(0), T(1), T(0)}, {T(1), T(0), T(1)}} ));
+    ASSERT_TRUE(m1.data() == ptr);
+    ASSERT_TRUE(m1.cols() == 3);
+    ASSERT_TRUE(m1.rows() == 2);
+
+    ASSERT_TRUE(m1 == Matrix<T>({ {T(0), T(1), T(0)}, {T(1), T(0), T(1)}} ));
 }
