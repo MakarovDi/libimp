@@ -1,8 +1,10 @@
 #ifndef    IMP_FILTER_MINMAX_HEADER
 #   define IMP_FILTER_MINMAX_HEADER
 
+#include <type_traits>
 #include <ex/window>
 #include <ex/utility>
+
 
 #include "imp/common/matrix"
 
@@ -35,42 +37,25 @@ namespace internal
 {
 
 
-// TODO: remove when AccessModifier for Matrix will be implemented
-
-template<typename T>
-using AccessModifier = T& (&)(Matrix<T>&, index_t x, index_t y);
-
+template <typename T>
+const T& get_extremum(const ex::MinWindow<T>& w) { return w.minimum(); }
 
 template <typename T>
-T& transpose(Matrix<T>& m, index_t x, index_t y)
+const T& get_extremum(const ex::MaxWindow<T>& w) { return w.maximum(); }
+
+
+template <typename Window, typename M1, typename M2>
+void extremum_row_filter(const IDenseObject <M1>& source, IDenseObject<M2>& out, index_t radius)
 {
-    return m(y, x);
-}
+    index_t h = source.rows();
+    index_t w = source.cols();
 
-
-template <typename T>
-const T& get_extremum(const ex::MinWindow<T>& w)
-{
-    return w.minimum();
-}
-
-
-template <typename T>
-const T& get_extremum(const ex::MaxWindow<T>& w)
-{
-    return w.maximum();
-}
-
-
-template <typename T, typename Window, AccessModifier<T> item>
-void extremum_1d_filter(const Matrix<T>& data, index_t w, index_t h, Matrix<T>& out, index_t radius)
-{
     index_t window_size = 2 * radius + 1;
     index_t initial     = std::min(radius, w-1);
 
     for (index_t y = 0; y < h; ++y)
     {
-        Window sliding_window(window_size, data.ptr() + y*data.cols(), w);
+        Window sliding_window(window_size, &source.coeff(y, 0), w);
 
         // fill window
         for (index_t i = 0; i < initial; ++i)
@@ -82,21 +67,31 @@ void extremum_1d_filter(const Matrix<T>& data, index_t w, index_t h, Matrix<T>& 
         for (index_t out_x = 0; out_x < w; ++out_x)
         {
             sliding_window.next();
-            item(out, out_x, y) = get_extremum(sliding_window);
+            out(y, out_x) = get_extremum(sliding_window);
         }
     }
 }
+
+template <typename Window, typename M1, typename M2>
+void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>&& out, index_t radius)
+{
+    // handle eigen expressions (temporary rvalue objects) as lvalue
+    extremum_row_filter<Window>(source, out, radius);
+}
+
 
 
 } // internal
 
 
-
-class MinFilter final
+template<bool is_min_filter = true>
+class MinMaxFilter final
 {
+    template<typename T>
+    using Window = typename std::conditional<is_min_filter, ex::MinWindow<T>, ex::MaxWindow<T>>::type;
 
 public:
-    explicit MinFilter(index_t radius) : m_radius(radius)
+    explicit MinMaxFilter(index_t radius) : m_radius(radius)
     {
     }
 
@@ -104,36 +99,36 @@ public:
     index_t radius() const { return m_radius; }
 
 public:
-    template <typename T>
-    Matrix<T> apply(const Matrix<T>& matrix)
+    template <typename M>
+    M apply(const IDenseObject<M>& image)
     {
         using namespace internal;
 
-        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+        using T = typename M::Scalar;
 
-        Matrix<T> tmp(tmp_size, tmp_size);
-        Matrix<T> result(matrix.cols(), matrix.rows());
+        M tmp(image.cols(), image.rows());
+        M result(image.rows(), image.cols());
 
-        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
-        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), result, m_radius);
+        extremum_row_filter<Window<T>>(image,  tmp.transpose(), m_radius);
+        extremum_row_filter<Window<T>>(tmp, result.transpose(), m_radius);
 
         return result;
     }
 
 
-    template <typename T>
-    Matrix<T>& apply(ex::in_place_t, Matrix<T>& matrix)
+    template <typename M>
+    M& apply(ex::in_place_t, IDenseObject<M>& image)
     {
         using namespace internal;
 
-        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
+        using T = typename M::Scalar;
 
-        Matrix<T> tmp(tmp_size, tmp_size);
+        M tmp(image.cols(), image.rows());
 
-        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
-        extremum_1d_filter<T, ex::MinWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), matrix, m_radius);
+        extremum_row_filter<Window<T>>(image, tmp.transpose(), m_radius);
+        extremum_row_filter<Window<T>>(tmp, image.transpose(), m_radius);
 
-        return matrix;
+        return static_cast<M&>(image);
     }
 
 private:
@@ -141,54 +136,9 @@ private:
 };
 
 
+using MinFilter = MinMaxFilter<true>;
 
-class MaxFilter final
-{
-
-public:
-    explicit MaxFilter(index_t radius) : m_radius(radius)
-    {
-    }
-
-public:
-    index_t radius() const { return m_radius; }
-
-public:
-    template <typename T>
-    Matrix<T> apply(const Matrix<T>& matrix)
-    {
-        using namespace internal;
-
-        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
-
-        Matrix<T> tmp(tmp_size, tmp_size);
-        Matrix<T> result(matrix.cols(), matrix.rows());
-
-        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
-        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), result, m_radius);
-
-        return result;
-    }
-
-
-    template <typename T>
-    Matrix<T>& apply(ex::in_place_t, Matrix<T>& matrix)
-    {
-        using namespace internal;
-
-        index_t tmp_size = std::max(matrix.cols(), matrix.rows());
-
-        Matrix<T> tmp(tmp_size, tmp_size);
-
-        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(matrix, matrix.cols(), matrix.rows(),    tmp, m_radius);
-        extremum_1d_filter<T, ex::MaxWindow<T>, transpose>(tmp,    matrix.rows(), matrix.cols(), matrix, m_radius);
-
-        return matrix;
-    }
-
-private:
-    index_t m_radius;
-};
+using MaxFilter = MinMaxFilter<false>;
 
 
 }

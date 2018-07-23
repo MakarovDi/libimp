@@ -104,15 +104,11 @@ using IArray = Eigen::ArrayBase<A>;
 
 
 //
-// IDense: any IMatrix or IArray objects
+// IDenseObject: any IMatrix or IArray objects
 //     \---> contains base methods: indexing, resize, comparison, fillers (Zero/Random/Ones/...)
 //
 template <typename D>
-using IDense = Eigen::DenseBase<D>;
-
-
-template <typename D>
-using IReadOnlyDense = Eigen::DenseCoeffsBase<D, Eigen::ReadOnlyAccessors>;
+using IDenseObject = Eigen::DenseBase<D>;
 
 
 }

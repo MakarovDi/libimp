@@ -9,7 +9,7 @@ add_executable(ImpTests
     image/rgb_image.cpp
     io/ppm.cpp
     io/pgm.cpp
-#    filter/minmax.cpp
+    filter/minmax.cpp
 )
 
 

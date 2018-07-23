@@ -27,7 +27,7 @@ namespace pgm
 
 template <typename Image, typename T = typename Image::Scalar>
 static void save(std::ostream& binary_stream,
-                 const IReadOnlyDense<Image>& image,
+                 const IDenseObject<Image>& image,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
@@ -73,7 +73,7 @@ static void save(std::ostream& binary_stream,
 
 template <typename Image, typename T = typename Image::Scalar>
 static void save(const char* file_name,
-                 const IReadOnlyDense<Image>& image,
+                 const IDenseObject<Image>& image,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
