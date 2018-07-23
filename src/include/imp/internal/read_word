@@ -14,7 +14,7 @@ namespace internal
 {
 
 
-ex::word16 read_word(std::istream& binary_stream, bool is_8bit_word)
+inline ex::word16 read_word(std::istream& binary_stream, bool is_8bit_word)
 {
     int hi  = binary_stream.get();
     if (hi == EOF)
