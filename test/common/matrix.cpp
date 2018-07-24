@@ -405,12 +405,13 @@ TYPED_TEST(MatrixTests, matrix_array_assignment)
     ASSERT_TRUE(m1 == Matrix<T>({ {T(0), T(1)}, {T(1), T(0)}, {T(1), T(1)}}));
 
 
-    m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
-           {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} };
+    m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10), T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+           {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3),  T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)} };
     ASSERT_TRUE(m1.data() != ptr);
-    ASSERT_TRUE(m1.cols() == 8);
+    ASSERT_TRUE(m1.cols() == 16);
     ASSERT_TRUE(m1.rows() == 2);
-    ASSERT_TRUE(m1 == Matrix<T>( { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)}, {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} }));
+    ASSERT_TRUE(m1 == Matrix<T>( { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10), T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+                                   {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3),  T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)} }));
 }
 
 
