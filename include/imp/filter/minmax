@@ -55,6 +55,8 @@ void extremum_row_filter(const IDenseObject <M1>& source, IDenseObject<M2>& out,
 
     for (index_t y = 0; y < h; ++y)
     {
+        // TODO: fix for case <source> is eigen eXpression
+        // TODO: use iterator in Window insted of pointer
         Window sliding_window(window_size, &source.coeff(y, 0), w);
 
         // fill window
@@ -117,7 +119,7 @@ public:
 
 
     template <typename M>
-    M& apply(ex::in_place_t, IDenseObject<M>& image)
+    void apply(ex::in_place_t, IDenseObject<M>& image)
     {
         using namespace internal;
 
@@ -127,8 +129,22 @@ public:
 
         extremum_row_filter<Window<T>>(image, tmp.transpose(), m_radius);
         extremum_row_filter<Window<T>>(tmp, image.transpose(), m_radius);
+    }
 
-        return static_cast<M&>(image);
+
+    template <typename M>
+    M apply(const IDenseObject<M>&& image)
+    {
+        // handle eigen eXpressions
+        throw std::logic_error("work with eigen eXpressions is not implemented yet");
+    }
+
+
+    template <typename M>
+    void apply(ex::in_place_t, IDenseObject<M>&& image)
+    {
+        // handle eigen eXpressions
+        throw std::logic_error("work with eigen eXpressions is not implemented yet");
     }
 
 private:
