@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
+#  define eigen_assert(x) if (!(x)) { throw (std::runtime_error("error")); }
 #include <imp/common/matrix>
 
 
@@ -23,564 +24,415 @@ TYPED_TEST_CASE(MatrixTests, MathTypes);
 TYPED_TEST(MatrixTests, default_ctor)
 {
     Matrix<TypeParam> m(2, 3);
-    ASSERT_TRUE(m.is_own_memory());
 
-    ASSERT_EQ(m.rows(), 3);
-    ASSERT_EQ(m.cols(), 2);
+    ASSERT_EQ(m.rows(), 2);
+    ASSERT_EQ(m.cols(), 3);
     ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
 }
 
 
 TYPED_TEST(MatrixTests, raw_ptr_copy_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m.is_own_memory());
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6) };
 
-    std::memset(ptr, 0, sizeof(TypeParam)*3*2);
+    Matrix<T, 2, 3> m(ptr);
 
-    ASSERT_EQ(m(0, 0), TypeParam(1));
-    ASSERT_EQ(m(1, 0), TypeParam(2));
-    ASSERT_EQ(m(2, 0), TypeParam(3));
-    ASSERT_EQ(m(0, 1), TypeParam(4));
-    ASSERT_EQ(m(1, 1), TypeParam(5));
-    ASSERT_EQ(m(2, 1), TypeParam(6));
+    std::memset(ptr, 0, sizeof(T)*3*2);
+
+    ASSERT_EQ(m(0, 0), T(1));
+    ASSERT_EQ(m(0, 1), T(2));
+    ASSERT_EQ(m(0, 2), T(3));
+    ASSERT_EQ(m(1, 0), T(4));
+    ASSERT_EQ(m(1, 1), T(5));
+    ASSERT_EQ(m(1, 2), T(6));
+
+    Matrix<T, 2, 3> m1({ { T(1), T(2), T(3) },
+                         { T(4), T(5), T(6) } });
+
+    ASSERT_EQ(m1(0, 0), T(1));
+    ASSERT_EQ(m1(0, 1), T(2));
+    ASSERT_EQ(m1(0, 2), T(3));
+    ASSERT_EQ(m1(1, 0), T(4));
+    ASSERT_EQ(m1(1, 1), T(5));
+    ASSERT_EQ(m1(1, 2), T(6));
 }
 
 
 TYPED_TEST(MatrixTests, raw_ptr_reuse_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
+    
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6)  };
 
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(m.is_own_memory());
+    Map<Matrix<T>> m(ptr, 2, 3);
 
-    std::memset(ptr, 0, sizeof(TypeParam)*3*2);
+    ASSERT_TRUE(m.data() == ptr);
+    std::memset(ptr, 0, sizeof(T)*3*2);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ptr[i] = TypeParam(i);
-        ASSERT_EQ(m[i], TypeParam(i));
+        ptr[i] = T(i);
+        ASSERT_EQ(m(i), T(i));
     }
 }
 
 
 TYPED_TEST(MatrixTests, const_raw_ptr_copy_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    const TypeParam* const_ptr = ptr;
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6)  };
 
-    Matrix<TypeParam> m(3, 2, const_ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m.is_own_memory());
+    const T* const_ptr = ptr;
 
-    std::memset(ptr, 0, sizeof(TypeParam)*3*2);
+    Matrix<T, 2, 3> m(const_ptr);
+    ASSERT_TRUE(m.data() != ptr);
 
-    ASSERT_EQ(m(0, 0), TypeParam(1));
-    ASSERT_EQ(m(1, 0), TypeParam(2));
-    ASSERT_EQ(m(2, 0), TypeParam(3));
-    ASSERT_EQ(m(0, 1), TypeParam(4));
-    ASSERT_EQ(m(1, 1), TypeParam(5));
-    ASSERT_EQ(m(2, 1), TypeParam(6));
+    std::memset(ptr, 0, sizeof(T)*3*2);
+
+    ASSERT_EQ(m(0, 0), T(1));
+    ASSERT_EQ(m(0, 1), T(2));
+    ASSERT_EQ(m(0, 2), T(3));
+    ASSERT_EQ(m(1, 0), T(4));
+    ASSERT_EQ(m(1, 1), T(5));
+    ASSERT_EQ(m(1, 2), T(6));
 }
 
 
 TYPED_TEST(MatrixTests, const_raw_ptr_reuse_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    const TypeParam* const_ptr = ptr;
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6)  };
 
-    const Matrix<TypeParam> m(3, 2, const_ptr, RawMemory::kReuse);
-    ASSERT_FALSE(m.is_own_memory());
+    const T* const_ptr = ptr;
 
-    std::memset(ptr, 0, sizeof(TypeParam)*3*2);
+    Map<const Matrix<T, 2, 3>> m(const_ptr);
+    ASSERT_TRUE(m.data() == ptr);
 
-    for (index_t i = 0; i < m.size(); ++i)
-    {
-        ptr[i] = TypeParam(i);
-        ASSERT_EQ(m[i], TypeParam(i));
-    }
-}
-
-
-TYPED_TEST(MatrixTests, unique_ptr_copy_ctor)
-{
-    std::unique_ptr<TypeParam[]> ptr(new TypeParam[3]);
-
-    ptr[0] = TypeParam(0);
-    ptr[1] = TypeParam(1);
-    ptr[2] = TypeParam(2);
-
-    Matrix<TypeParam> m(3, 1, ptr);
-    ASSERT_TRUE(m.is_own_memory());
-
-    std::memset(ptr.get(), 0, sizeof(TypeParam)*3);
+    std::memset(ptr, 0, sizeof(T)*3*2);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(i));
-    }
-}
-
-
-TYPED_TEST(MatrixTests, unique_ptr_move_ctor)
-{
-    std::unique_ptr<TypeParam[]> ptr(new TypeParam[3]);
-
-    TypeParam* ptr_addr = ptr.get();
-
-    ptr[0] = TypeParam(0);
-    ptr[1] = TypeParam(1);
-    ptr[2] = TypeParam(2);
-
-    Matrix<TypeParam> m(3, 1, std::move(ptr));
-
-    ASSERT_EQ(ptr.get(), nullptr);
-
-    ASSERT_EQ(m.ptr(), ptr_addr);
-    ASSERT_TRUE(m.is_own_memory());
-
-    for (index_t i = 0; i < m.size(); ++i)
-    {
-        ASSERT_EQ(m[i], TypeParam(i));
+        ptr[i] = T(i);
+        ASSERT_EQ(m(i), T(i));
     }
 }
 
 
 TYPED_TEST(MatrixTests, copy_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m.ptr(), ptr);
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6)  };
 
-    Matrix<TypeParam> m2(m);
-    ASSERT_TRUE(m2.ptr() != m.ptr());
-    ASSERT_TRUE(m2.is_own_memory());
+    Map<Matrix<T, 2, 3>> m(ptr);
+    ASSERT_EQ(m.data(), ptr);
+
+    Matrix<T> m2(m);
+    ASSERT_TRUE(m2.data() != m.data());
     ASSERT_EQ(m2.size(), m.size());
     ASSERT_EQ(m2.rows(), m.rows());
     ASSERT_EQ(m2.cols(), m.cols());
-    ASSERT_EQ(m2.memory_size(), m.memory_size());
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m2[i], ptr[i]);
+        ASSERT_EQ(m2(i), ptr[i]);
     }
 
 
-    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m1.ptr() != ptr);
+    Matrix<T, 2, 3> m1(ptr);
+    ASSERT_TRUE(m1.data() != ptr);
 
-    Matrix<TypeParam> m4(m1);
-    ASSERT_TRUE(m4.ptr() != m1.ptr());
-    ASSERT_TRUE(m4.is_own_memory());
+    Matrix<T> m4(m1);
+    ASSERT_TRUE(m4.data() != m1.data());
     ASSERT_EQ(m4.size(), m1.size());
     ASSERT_EQ(m4.rows(), m1.rows());
     ASSERT_EQ(m4.cols(), m1.cols());
-    ASSERT_EQ(m4.memory_size(), m1.memory_size());
 
     for (index_t i = 0; i < m1.size(); ++i)
     {
-        ASSERT_EQ(m4[i], ptr[i]);
+        ASSERT_EQ(m4(i), ptr[i]);
     }
-}
-
-
-TYPED_TEST(MatrixTests, assign_method)
-{
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
-
-    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m1.ptr(), ptr);
-    ASSERT_FALSE(m1.is_own_memory());
-
-    Matrix<TypeParam> m2(3, 3);
-    ASSERT_THROW(m2.assign(m1), std::logic_error);
-
-    m1.assign(Matrix<TypeParam>(3, 2, { TypeParam(0), TypeParam(0), TypeParam(0),
-                                        TypeParam(0), TypeParam(0), TypeParam(0) } ));
-    ASSERT_TRUE(m1.ptr() == ptr);
-    ASSERT_FALSE(m1.is_own_memory());
-
-    for (index_t i = 0; i < m1.size(); ++i)
-    {
-        ASSERT_EQ(m1[i], TypeParam(0));
-    }
-
-    ASSERT_THROW(m1.assign({TypeParam(0)}), std::logic_error);
-
-    m1.assign({ TypeParam(1), TypeParam(1), TypeParam(1),
-                TypeParam(1), TypeParam(1), TypeParam(1) });
-
-    ASSERT_TRUE(m1.ptr() == ptr);
-    ASSERT_FALSE(m1.is_own_memory());
-
-    for (index_t i = 0; i < m1.size(); ++i)
-    {
-        ASSERT_EQ(m1[i], TypeParam(1));
-    }
-
-    ASSERT_THROW(m1.assign({ { TypeParam(2), TypeParam(2) },
-                             { TypeParam(2), TypeParam(2) } }), std::logic_error);
-
-    m1.assign({ { TypeParam(2), TypeParam(2), TypeParam(2) },
-                { TypeParam(2), TypeParam(2), TypeParam(2) } });
-
-    ASSERT_TRUE(m1.ptr() == ptr);
-    ASSERT_FALSE(m1.is_own_memory());
-
-    for (index_t i = 0; i < m1.size(); ++i)
-    {
-        ASSERT_EQ(m1[i], TypeParam(2));
-    }
-
 }
 
 
 TYPED_TEST(MatrixTests, copy_operator)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
+
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6) };
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m.ptr(), ptr);
+    Map<Matrix<T, 2, 3>> m(ptr);
+    ASSERT_EQ(m.data(), ptr);
 
-    Matrix<TypeParam> m1(1, 1);
+    Matrix<T> m1(1, 1);
 
     m1 = m;
 
-    ASSERT_TRUE(m1.ptr() != m.ptr());
-    ASSERT_TRUE(m1.is_own_memory());
+    ASSERT_TRUE(m1.data() != m.data());
     ASSERT_EQ(m1.size(), m.size());
     ASSERT_EQ(m1.rows(), m.rows());
     ASSERT_EQ(m1.cols(), m.cols());
-    ASSERT_EQ(m1.memory_size(), m.memory_size());
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m1[i], ptr[i]);
+        ASSERT_EQ(m1(i), ptr[i]);
     }
 
     // test copy mode
-    Matrix<TypeParam> m2(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m2.ptr() != ptr);
+    Matrix<T, 2, 3> m2(ptr);
+    ASSERT_TRUE(m2.data() != ptr);
 
-    Matrix<TypeParam> m3(1, 1);
+    Matrix<T> m3(1, 1);
 
     m3 = m2;
 
-    ASSERT_TRUE(m3.ptr() != m2.ptr());
-    ASSERT_TRUE(m3.is_own_memory());
+    ASSERT_TRUE(m3.data() != m2.data());
     ASSERT_EQ(m3.size(), m2.size());
     ASSERT_EQ(m3.rows(), m2.rows());
     ASSERT_EQ(m3.cols(), m2.cols());
-    ASSERT_EQ(m3.memory_size(), m2.memory_size());
 
     for (index_t i = 0; i < m2.size(); ++i)
     {
-        ASSERT_EQ(m3[i], ptr[i]);
+        ASSERT_EQ(m3(i), ptr[i]);
     }
 }
 
 
 TYPED_TEST(MatrixTests, copy_array_operator)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
     // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m.ptr(), ptr);
+    Matrix<T> m({ { T(1), T(2), T(3) },
+                  { T(4), T(5), T(6) } });
+    const T* ptr = m.data();
 
-    m = { { TypeParam(0), TypeParam(1), TypeParam(2) },
-          { TypeParam(3), TypeParam(4), TypeParam(5) } };
 
-    ASSERT_EQ(m.ptr(), ptr);
+    m = { { T(0), T(1), T(2) },
+          { T(3), T(4), T(5) } };
+
+    ASSERT_EQ(m.data(), ptr);
     ASSERT_EQ(m.rows(), 2);
     ASSERT_EQ(m.cols(), 3);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(i));
+        ASSERT_EQ(m(i), T(i));
     }
 
-    m = { { TypeParam(0), TypeParam(0) },
-          { TypeParam(0), TypeParam(0) },
-          { TypeParam(0), TypeParam(0) } };
+    m = { { T(0), T(0) },
+          { T(0), T(0) },
+          { T(0), T(0) } };
 
-    ASSERT_EQ(m.ptr(), ptr);
+    ASSERT_EQ(m.data(), ptr);
     ASSERT_EQ(m.rows(), 3);
     ASSERT_EQ(m.cols(), 2);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(0));
+        ASSERT_EQ(m(i), T(0));
     }
 
-    m = { { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) },
-          { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) },
-          { TypeParam(1), TypeParam(1), TypeParam(1), TypeParam(1) } };
+    m = { { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) },
+          { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) },
+          { T(1), T(1), T(1), T(1), T(1), T(1), T(1), T(1) } };
 
-    ASSERT_TRUE(m.ptr() != ptr);
+    ASSERT_TRUE(m.data() != ptr);
     ASSERT_EQ(m.rows(), 3);
-    ASSERT_EQ(m.cols(), 4);
+    ASSERT_EQ(m.cols(), 8);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(1));
+        ASSERT_EQ(m(i), T(1));
     }
-}
-
-
-TYPED_TEST(MatrixTests, mem_shrinkage_test)
-{
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
-
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-
-    // test no memory shrinkage
-    index_t size = Matrix<TypeParam>::Config::kMemShrinkageScale*m.size() - 1;
-
-    Matrix<TypeParam> m1(size, 1);
-
-    m1 = m;
-    ASSERT_EQ(m1.memory_size(), size * index_t(sizeof(TypeParam)));
-
-    // test memory shrinkage
-    size = Matrix<TypeParam>::Config::kMemShrinkageScale*m.size() + 1;
-
-    Matrix<TypeParam> m2(size, 1);
-
-    m2 = m;
-    ASSERT_EQ(m2.memory_size(), m.memory_size());
 }
 
 
 TYPED_TEST(MatrixTests, move_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m.ptr(), ptr);
+    Matrix<T> m({ { T(1), T(2), T(3) },
+                  { T(4), T(5), T(6) } });
+    const T* ptr = m.data();
 
-    Matrix<TypeParam> m2(std::move(m));
-    ASSERT_EQ(m2.ptr(), ptr);
-    ASSERT_FALSE(m2.is_own_memory());
+    Matrix<T> m2(std::move(m));
+    ASSERT_EQ(m2.data(), ptr);
     ASSERT_EQ(m2.size(), 6);
     ASSERT_EQ(m2.rows(), 2);
     ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
 
-    ASSERT_EQ(m.ptr(), nullptr);
-    ASSERT_FALSE(m.is_own_memory());
+    ASSERT_EQ(m.data(), nullptr);
     ASSERT_EQ(m.size(), 0);
     ASSERT_EQ(m.rows(), 0);
     ASSERT_EQ(m.cols(), 0);
-    ASSERT_EQ(m.memory_size(), 0);
-
-    // test copy mode
-    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m1.ptr() != ptr);
-
-    TypeParam* p = m1.ptr();
-
-    Matrix<TypeParam> m3(std::move(m1));
-    ASSERT_EQ(m3.ptr(), p);
-    ASSERT_TRUE(m3.is_own_memory());
-    ASSERT_EQ(m3.size(), 6);
-    ASSERT_EQ(m3.rows(), 2);
-    ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
-
-    ASSERT_EQ(m1.ptr(), nullptr);
-    ASSERT_FALSE(m1.is_own_memory());
-    ASSERT_EQ(m1.size(), 0);
-    ASSERT_EQ(m1.rows(), 0);
-    ASSERT_EQ(m1.cols(), 0);
-    ASSERT_EQ(m1.memory_size(), 0);
 }
 
 
 TYPED_TEST(MatrixTests, move_rvalue_ctor)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    Matrix<TypeParam> m2(Matrix<TypeParam>(3, 2, ptr, RawMemory::kReuse));
-    ASSERT_EQ(m2.ptr(), ptr);
-    ASSERT_FALSE(m2.is_own_memory());
-    ASSERT_EQ(m2.size(), 6);
-    ASSERT_EQ(m2.rows(), 2);
-    ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
+    T ptr[] = { T(1), T(2), T(3),
+                T(4), T(5), T(6)  };
 
-    Matrix<TypeParam> m3(Matrix<TypeParam>(3, 2, ptr, RawMemory::kCopy));
-    ASSERT_TRUE(m3.ptr() != ptr);
-    ASSERT_TRUE(m3.is_own_memory());
+    Matrix<T> m3(Map<Matrix<T, 2, 3>>{ptr});
+
+    ASSERT_TRUE(m3.data() != ptr);
     ASSERT_EQ(m3.size(), 6);
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
 }
 
 
 TYPED_TEST(MatrixTests, move_operator)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    // test reuse mode
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_EQ(m.ptr(), ptr);
+    Matrix<T> m({ { T(1), T(2), T(3) },
+                  { T(4), T(5), T(6) } });
 
-    Matrix<TypeParam> m2(1, 1);
+    const T* ptr = m.data();
+
+    Matrix<T> m2(1, 2);
 
     m2 = std::move(m);
 
-    ASSERT_EQ(m.ptr(), nullptr);
-    ASSERT_FALSE(m.is_own_memory());
-    ASSERT_EQ(m.size(), 0);
-    ASSERT_EQ(m.rows(), 0);
-    ASSERT_EQ(m.cols(), 0);
-    ASSERT_EQ(m.memory_size(), 0);
-
-    ASSERT_EQ(m2.ptr(), ptr);
-    ASSERT_FALSE(m2.is_own_memory());
+    ASSERT_EQ(m2.data(), ptr);
     ASSERT_EQ(m2.size(), 6);
     ASSERT_EQ(m2.rows(), 2);
     ASSERT_EQ(m2.cols(), 3);
-    ASSERT_EQ(m2.memory_size(), 6 * sizeof(TypeParam));
 
     // test copy mode
-    Matrix<TypeParam> m1(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(m1.ptr() != ptr);
+    Matrix<T> m1(m2);
+    ASSERT_TRUE(m1.data() != ptr);
 
-    TypeParam* p = m1.ptr();
+    T* p = m1.data();
 
-    Matrix<TypeParam> m3(1, 1);
+    Matrix<T> m3(1, 1);
 
     m3 = std::move(m1);
 
-    ASSERT_EQ(m1.ptr(), nullptr);
-    ASSERT_FALSE(m1.is_own_memory());
-    ASSERT_EQ(m1.size(), 0);
-    ASSERT_EQ(m1.rows(), 0);
-    ASSERT_EQ(m1.cols(), 0);
-    ASSERT_EQ(m1.memory_size(), 0);
-
-    ASSERT_EQ(m3.ptr(), p);
-    ASSERT_TRUE(m3.is_own_memory());
+    ASSERT_EQ(m3.data(), p);
     ASSERT_EQ(m3.size(), 6);
     ASSERT_EQ(m3.rows(), 2);
     ASSERT_EQ(m3.cols(), 3);
-    ASSERT_EQ(m3.memory_size(), 6 * sizeof(TypeParam));
-}
-
-
-TYPED_TEST(MatrixTests, from_array_ctor)
-{
-    Matrix<TypeParam> m(2, 3, { TypeParam(0), TypeParam(1), TypeParam(2),
-                                TypeParam(3), TypeParam(4), TypeParam(5) });
-
-    ASSERT_TRUE(m.is_own_memory());
-
-    ASSERT_EQ(m.rows(), 3);
-    ASSERT_EQ(m.cols(), 2);
-    ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
-
-    for (index_t i = 0; i < m.size(); ++i)
-    {
-        ASSERT_EQ(m[i], TypeParam(i));
-    }
 }
 
 
 TYPED_TEST(MatrixTests, vector_ctor)
 {
-    Matrix<TypeParam> m({ TypeParam(0), TypeParam(1), TypeParam(2) });
+    using T = TypeParam;
 
-    ASSERT_TRUE(m.is_own_memory());
+    Eigen::VectorXi v(Eigen::Index(4));
+
+    Vector<T> m({ {T(0)},
+                  {T(1)},
+                  {T(2)} });
 
     ASSERT_EQ(m.rows(), 3);
     ASSERT_EQ(m.cols(), 1);
-    ASSERT_EQ(m.size(), 3*1);
-    ASSERT_EQ(m.memory_size(), 3*1*sizeof(TypeParam));
+    ASSERT_EQ(m.size(), 3);
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(i));
+        ASSERT_EQ(m(i), T(i));
+    }
+}
+
+
+TYPED_TEST(MatrixTests, row_vector_ctor)
+{
+    using T = TypeParam;
+
+    Eigen::VectorXi v(Eigen::Index(4));
+
+    RowVector<T> m({{ T(0), T(1), T(2) }});
+
+    ASSERT_EQ(m.cols(), 3);
+    ASSERT_EQ(m.rows(), 1);
+    ASSERT_EQ(m.size(), 3);
+
+    for (index_t i = 0; i < m.size(); ++i)
+    {
+        ASSERT_EQ(m(i), T(i));
     }
 }
 
 
 TYPED_TEST(MatrixTests, matrix_array_ctor)
 {
-    Matrix<TypeParam> m({ { TypeParam(0), TypeParam(1), TypeParam(2) },
-                          { TypeParam(3), TypeParam(4), TypeParam(5) } });
+    using T = TypeParam;
 
-    ASSERT_TRUE(m.is_own_memory());
+    Matrix<T> m({ { T(0), T(1), T(2) },
+                  { T(3), T(4), T(5) } });
 
     ASSERT_EQ(m.rows(), 2);
     ASSERT_EQ(m.cols(), 3);
     ASSERT_EQ(m.size(), 3*2);
-    ASSERT_EQ(m.memory_size(), 3*2*sizeof(TypeParam));
 
     for (index_t i = 0; i < m.size(); ++i)
     {
-        ASSERT_EQ(m[i], TypeParam(i));
+        ASSERT_EQ(m(i), T(i));
     }
 }
 
 
-TYPED_TEST(MatrixTests, indexing)
+TYPED_TEST(MatrixTests, matrix_array_assignment)
 {
-    TypeParam ptr[] = { TypeParam(1), TypeParam(2), TypeParam(3),
-                        TypeParam(4), TypeParam(5), TypeParam(6)  };
+    using T = TypeParam;
 
-    Matrix<TypeParam> m(3, 2, ptr, RawMemory::kReuse);
+    Matrix<T> m1(2, 3);
+    T* ptr = m1.data();
 
-    index_t i = 0;
+    m1 = { {T(0), T(1)},
+           {T(1), T(0)},
+           {T(1), T(1)}};
+    ASSERT_TRUE(m1.data() == ptr);
+    ASSERT_TRUE(m1.cols() == 2);
+    ASSERT_TRUE(m1.rows() == 3);
+    ASSERT_TRUE(m1 == Matrix<T>({ {T(0), T(1)}, {T(1), T(0)}, {T(1), T(1)}}));
 
-    for (index_t r = 0; r < m.rows(); ++r)
-        for (index_t c = 0; c < m.cols(); ++c)
-        {
-            ASSERT_EQ(m[i], m(i));
-            ASSERT_EQ(m[i], m(c, r));
-            ASSERT_EQ(m[i], m.item(i));
-            ASSERT_EQ(m[i], m.item(c, r));
 
-            ++i;
-        }
+    m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+           {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} };
+    ASSERT_TRUE(m1.data() != ptr);
+    ASSERT_TRUE(m1.cols() == 8);
+    ASSERT_TRUE(m1.rows() == 2);
+    ASSERT_TRUE(m1 == Matrix<T>( { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)}, {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3)} }));
+}
 
-    ASSERT_EQ(i, m.size());
 
-    i = 0;
+TYPED_TEST(MatrixTests, map_array_assignment)
+{
+    using T = TypeParam;
 
-    for (index_t r = 0; r < m.rows(); ++r)
-        for (index_t c = 0; c < m.cols(); ++c)
-        {
-            m[i] = TypeParam(i);
+    T ptr[] = { 1, 2, 3, 4, 5, 6 };
+    Map<Matrix<T>> m1(ptr, 2, 3);
 
-            ASSERT_EQ(m[i], TypeParam(i));
-            ASSERT_EQ(m(i), TypeParam(i));
-            ASSERT_EQ(m(c, r), TypeParam(i));
-            ASSERT_EQ(m.item(i), TypeParam(i));
-            ASSERT_EQ(m.item(c, r), TypeParam(i));
+    ASSERT_THROW((m1 = { {T(0), T(1)},
+                         {T(1), T(0)},
+                         {T(1), T(1)} }), std::runtime_error);
 
-            ++i;
-        }
+    ASSERT_THROW((m1 = { {T(0), T(1), T(2), T(4), T(6), T(8), T(9), T(10)},
+                         {T(1), T(0), T(3), T(5), T(0), T(3), T(4), T(3) } }), std::runtime_error);
+
+
+    ASSERT_NO_THROW((m1 = { {T(0), T(1), T(0)}, {T(1), T(0), T(1)}} ));
+    ASSERT_TRUE(m1.data() == ptr);
+    ASSERT_TRUE(m1.cols() == 3);
+    ASSERT_TRUE(m1.rows() == 2);
+
+    ASSERT_TRUE(m1 == Matrix<T>({ {T(0), T(1), T(0)}, {T(1), T(0), T(1)}} ));
 }

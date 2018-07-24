@@ -5,7 +5,8 @@ Building blocks and complete algorithms for image processing.
 
 ## Submodules
 
-* **libex**: building blocks for C++ https://github.com/MakarovDi/libex;
+* **libex**: some C++ extensions https://github.com/MakarovDi/libex;
+* **Eigen**: C++ template library for linear algebra http://eigen.tuxfamily.org;
 
 ## Requirements ##
 

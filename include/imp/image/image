@@ -12,9 +12,19 @@ namespace imp
 {
 
 
+enum RawMemory
+{
+    kCopy = 0,
+    kMap,
+};
+
+
 template <class T>
 struct EmptyFacade;
 
+
+template <typename T>
+using ImagePlane = Map<Matrix<T>>;
 
 // TODO: change [class Facade = EmptyFacade<T>] -> [template <class> class Facade = EmptyFacade]
 // TODO: when msvc grow up to it. msvc 2015 can't trace it
@@ -26,105 +36,170 @@ template
 >
 class Image final : public Facade
 {
-    using Matrix = Matrix<T>;
+    enum Config
+    {
+        kReallocationTreshold = 2,
+    };
+
 public:
     Image() :
         m_width(0),
         m_height(0),
-        m_plane_size(0),
-        m_data()
+        m_storage(nullptr),
+        m_pointer(nullptr),
+        m_plane
+        {
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0)
+        }
+    {
+    }
+
+
+    Image(index_t height, index_t width) :
+        m_width(width),
+        m_height(height),
+        m_storage(new T[height*width*3]),
+        m_pointer(m_storage.get()),
+        m_plane
+        {
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0)
+        }
     {
         init_planes();
     }
 
 
-    Image(index_t width, index_t height) :
+    Image(index_t height, index_t width, const T* array, RawMemory mode=RawMemory::kCopy) :
         m_width(width),
         m_height(height),
-        m_plane_size(width*height),
-        m_data(3*m_plane_size, 1)
+        m_storage( mode == RawMemory::kCopy ? new T[height*width*3] : nullptr               ),
+        m_pointer( mode == RawMemory::kCopy ? m_storage.get()       : const_cast<T*>(array) ),
+        m_plane
+        {
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0)
+        }
     {
-        init_planes();
-    }
+        if (mode == RawMemory::kCopy)
+        {
+            copy_array(array, data(), size());
+        }
 
-
-    explicit Image(index_t width, index_t height, const T* ptr, RawMemory mem_mode) :
-        m_width(width),
-        m_height(height),
-        m_plane_size(width*height),
-        m_data(3*m_plane_size, 1, ptr, mem_mode)
-    {
         init_planes();
     }
 
 
     template <index_t M, index_t N>
-    Image(const T (&ptr)[3][M][N]) :
-        Image(N, M, reinterpret_cast<const T*>(ptr), RawMemory::kCopy)
+    explicit Image(const T (&data)[3][M][N]) :
+        Image(M, N, reinterpret_cast<const T*>(data), RawMemory::kCopy)
     {
     }
 
-public:
-    Image(const Image& image) : Image(image.width(), image.height())
+public: // copy semantic
+    Image(const Image& image) :
+        Image(image.height(), image.width(), image.data(), RawMemory::kCopy)
     {
-        m_data = image.m_data;
     }
 
 
-    Image& operator=(const Image& rgb)
+    Image& operator=(const Image& image)
     {
-        if (this == &rgb) return *this;
+        if (this == &image) return *this;
 
-        m_plane_size = rgb.m_plane_size;
-        m_height = rgb.m_height;
-        m_width = rgb.m_width;
+        m_height = image.height();
+        m_width  = image.width();
 
-        m_data = rgb.m_data;
+        if (size() < image.size() || size() > kReallocationTreshold*image.size())
+        {
+            m_storage.reset(new T[image.size()]);
+            m_pointer = m_storage.get();
+        }
+
+        copy_array(image.data(), data(), size());
 
         init_planes();
 
         return *this;
     }
 
-public:
-    Image(Image&&) noexcept = default;
-    Image& operator=(Image&&) noexcept = default;
-
-public:
-    bool operator==(const Image& img) const
+public: // move semantic
+    Image(Image&& image) noexcept :
+        m_width(image.width()),
+        m_height(image.height()),
+        m_storage(std::move(image.m_storage)),
+        m_pointer(image.m_pointer),
+        m_plane
+        {
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0),
+            ImagePlane<T>(nullptr, 0, 0)
+        }
     {
-        if (this == &img) return true;
+        image.m_width = 0;
+        image.m_height = 0;
+        image.m_pointer = nullptr;
 
-        if (width() != img.width() || height() != img.height())
-            return false;
-
-        if (ptr() == img.ptr())
-            return true;
-
-        return m_data == img.m_data;
+        clear_planes(image);
+        init_planes();
     }
 
-    bool operator!=(const Image& img) const { return !operator==(img); }
+
+    Image& operator=(Image&& image) noexcept
+    {
+        m_width  = image.width();
+        m_height = image.height();
+
+        m_storage = std::move(image.m_storage);
+        m_pointer = image.m_pointer;
+
+        image.m_pointer = nullptr;
+        image.m_height = 0;
+        image.m_width  = 0;
+
+        clear_planes(image);
+        init_planes();
+
+        return *this;
+    }
 
 public:
-    index_t width()       const { return m_width;  }
-    index_t height()      const { return m_height; }
+    bool operator==(const Image& image) const
+    {
+        if (this == &image) return true;
 
-    index_t plane_size()  const { return m_plane_size;         }
-    index_t total_size()  const { return m_data.size();        }
-    index_t memory_size() const { return m_data.memory_size(); }
+        if (width() != image.width() || height() != image.height())
+            return false;
 
-    const T* ptr() const { return m_data.ptr(); }
-    T*       ptr()       { return m_data.ptr(); }
+        if (data() == image.data())
+            return true;
 
-    bool is_own_memory()  const { return m_data.is_own_memory(); }
+        return compare_array(data(), image.data(), size());
+    }
+
+
+    bool operator!=(const Image& image) const { return !operator==(image); }
+
+public:
+    index_t  width()      const { return m_width;  }
+    index_t  height()     const { return m_height; }
+
+    index_t  plane_size() const { return m_width*m_height; }
+    index_t  size()       const { return plane_size()*3;   }
+
+    const T* data()       const { return m_pointer; }
+          T* data()             { return m_pointer; }
 
 public:
     using ColorPlane = typename Facade::ColorPlane;
 
 public:
-    const T& color(index_t index,        ColorPlane color_plane) const { return m_plane[color_plane][index];       }
-          T& color(index_t index,        ColorPlane color_plane)       { return m_plane[color_plane][index];       }
+    const T& color(index_t index,        ColorPlane color_plane) const { return m_plane[color_plane](index);       }
+          T& color(index_t index,        ColorPlane color_plane)       { return m_plane[color_plane](index);       }
     const T& color(index_t x, index_t y, ColorPlane color_plane) const { return color(x + y*width(), color_plane); }
           T& color(index_t x, index_t y, ColorPlane color_plane)       { return color(x + y*width(), color_plane); }
 
@@ -133,41 +208,59 @@ public:
     const T& operator()(index_t x, index_t y, ColorPlane color_plane) const { return color(x, y, color_plane);  }
           T& operator()(index_t x, index_t y, ColorPlane color_plane)       { return color(x, y, color_plane);  }
 
-    const T& operator()(index_t index) const { return m_data[index]; }
-          T& operator()(index_t index)       { return m_data[index]; }
-    const T& operator[](index_t index) const { return m_data[index]; }
-          T& operator[](index_t index)       { return m_data[index]; }
+    const T& operator()(index_t index) const { return m_pointer[index]; }
+          T& operator()(index_t index)       { return m_pointer[index]; }
+    const T& operator[](index_t index) const { return m_pointer[index]; }
+          T& operator[](index_t index)       { return m_pointer[index]; }
 
-
-    const Matrix& plane(index_t plane_index) const
-    {
-        return m_plane[plane_index];
-    }
-
-    Matrix plane(index_t plane_index)
-    {
-        //
-        // create proxy matrix object: without data copy and pointer to plane data
-        // to protect internal plane matrix from assigment operator (reallocation case)
-        //
-        return Matrix(width(), height(), m_plane[plane_index].ptr(), RawMemory::kReuse);
-    }
+    // note: map will not change pointer inside on assigment
+    const ImagePlane<T>& plane(index_t plane_index) const { return m_plane[plane_index]; }
+          ImagePlane<T>& plane(index_t plane_index)       { return m_plane[plane_index]; }
 
 private:
     void init_planes()
     {
-        m_plane[0] = Matrix(width(), height(), ptr(),                  RawMemory::kReuse);
-        m_plane[1] = Matrix(width(), height(), ptr() +   plane_size(), RawMemory::kReuse);
-        m_plane[2] = Matrix(width(), height(), ptr() + 2*plane_size(), RawMemory::kReuse);
+        for (index_t i = 0; i < 3; ++i)
+        {
+            new (&m_plane[i]) ImagePlane<T>(data() + i*plane_size(), height(), width());
+        }
+    }
+
+
+    static void copy_array(const T* src_data, T* dst_data, index_t size)
+    {
+        Map<const RowVector<T>> src(src_data, size);
+        Map<RowVector<T>> dst(dst_data, size);
+
+        dst = src;
+    }
+
+
+    static bool compare_array(const T* src_data, const T* dst_data, index_t size)
+    {
+        Map<const RowVector<T>> src(src_data, size);
+        Map<const RowVector<T>> dst(dst_data, size);
+
+        return dst == src;
+    }
+
+
+    static void clear_planes(Image& image)
+    {
+        for (index_t i = 0; i < 3; ++i)
+        {
+            new (&image.m_plane[i]) ImagePlane<T>(nullptr, 0, 0);
+        }
     }
 
 private:
     index_t m_width;
     index_t m_height;
-    index_t m_plane_size;
 
-    Matrix m_data;
-    Matrix m_plane[3];
+    std::unique_ptr<T[]> m_storage;
+    T*                   m_pointer;
+
+    Map<Matrix<T>> m_plane[3];
 };
 
 

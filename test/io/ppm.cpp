@@ -261,4 +261,3 @@ TEST(ppm_test, load_with_black_level)
 
     ASSERT_TRUE(img2 == img1);
 }
-

@@ -1,0 +1,32 @@
+#ifndef    IMP_EIGEN_MATRIXBASE_PLUGIN_HEADER
+#   define IMP_EIGEN_MATRIXBASE_PLUGIN_HEADER
+
+
+// Eigen::MatrixBase plugin
+
+public:
+
+    template <Index M, Index N>
+    Derived& operator=(const Scalar (&ptr)[M][N])
+    {
+        if (this->size() == M*N)
+        {
+            derived().resize(M, N);
+
+            for (Index y = 0; y < M; ++y)
+                for (Index x = 0; x < N; ++x)
+                {
+                    this->operator()(y, x) = ptr[y][x];
+                }
+        }
+        else
+        {
+            Matrix<Scalar, Dynamic, Dynamic, PlainObject::Options, Dynamic, Dynamic> data(ptr);
+            this->operator=(std::move(data));
+        }
+
+        return *static_cast<Derived*>(this);
+    }
+
+
+#endif

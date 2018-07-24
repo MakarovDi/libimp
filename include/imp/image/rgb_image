@@ -41,14 +41,14 @@ public:
     const T& b(index_t x, index_t y) const { return self().color(x, y,  kB); }
           T& b(index_t x, index_t y)       { return self().color(x, y,  kB); }
 
-    const Matrix<T>& r_plane() const { return self().plane(kR); }
-          Matrix<T>  r_plane()       { return self().plane(kR); }
+    const Map<Matrix<T>>& r_plane()  const { return self().plane(kR); }
+          Map<Matrix<T>>& r_plane()        { return self().plane(kR); }
 
-    const Matrix<T>& g_plane() const { return self().plane(kG); }
-          Matrix<T>  g_plane()       { return self().plane(kG); }
+    const Map<Matrix<T>>& g_plane()  const { return self().plane(kG); }
+          Map<Matrix<T>>& g_plane()        { return self().plane(kG); }
 
-    const Matrix<T>& b_plane() const { return self().plane(kB); }
-          Matrix<T>  b_plane()       { return self().plane(kB); }
+    const Map<Matrix<T>>& b_plane()  const { return self().plane(kB); }
+          Map<Matrix<T>>& b_plane()        { return self().plane(kB); }
 
 protected:
     RgbFacade()  { }
