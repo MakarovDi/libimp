@@ -1,33 +1,14 @@
 #ifndef    IMP_COMMON_MATRIX_HEADER
 #   define IMP_COMMON_MATRIX_HEADER
 
-#include <memory>
-#include <iomanip>
-#include <cstring>
-#include <cmath>
-#include <random>
-
-#include <ex/range_check>
 #include <ex/common/type>
-#include <ex/common/policy>
-#include <ex/policy/notice>
-#include <ex/meta/selector>
-#include <ex/meta/math_type>
-#include <ex/random>
 
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE index_t
 
 #define EIGEN_MATRIX_PLUGIN     "imp/internal/eigen/matrix_plugin"
 #define EIGEN_MATRIXBASE_PLUGIN "imp/internal/eigen/matrixbase_plugin"
 
-
-#ifndef _MSC_VER
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wattributes"
-#   include <Eigen/Core>
-#   pragma GCC diagnostic pop
-#else
-#   include <Eigen/Core>
-#endif
+#include <Eigen/Core>
 
 
 namespace imp
