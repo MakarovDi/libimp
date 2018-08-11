@@ -1,6 +1,7 @@
 #ifndef    IMP_IMAGE_HEADER
 #   define IMP_IMAGE_HEADER
 
+#include <memory>
 
 #include <ex/common/type>
 #include <ex/policy/notice>
