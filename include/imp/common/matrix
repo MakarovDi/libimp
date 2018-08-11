@@ -8,7 +8,15 @@
 #define EIGEN_MATRIX_PLUGIN     "imp/internal/eigen/matrix_plugin"
 #define EIGEN_MATRIXBASE_PLUGIN "imp/internal/eigen/matrixbase_plugin"
 
-#include <Eigen/Core>
+
+#ifndef _MSC_VER
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wattributes"
+#   include <Eigen/Core>
+#   pragma GCC diagnostic pop
+#else
+#   include <Eigen/Core>
+#endif
 
 
 namespace imp
