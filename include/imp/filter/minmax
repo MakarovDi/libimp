@@ -2,11 +2,13 @@
 #   define IMP_FILTER_MINMAX_HEADER
 
 #include <type_traits>
-#include <ex/window>
 #include <ex/utility>
-
+#include <ex/window>
+#include <ex/iterator/make>
 
 #include "imp/common/matrix"
+#include "imp/common/iterator"
+
 
 //
 // O(M*N*r) implementation of 2D Min/Max filter
@@ -33,65 +35,66 @@ namespace imp
 {
 
 
+enum MinMaxMode : int
+{
+    kMinimum = 0,
+    kMaximum
+};
+
+
 namespace internal
 {
 
-
-template <typename T>
-const T& get_extremum(const ex::MinWindow<T>& w) { return w.minimum(); }
-
-template <typename T>
-const T& get_extremum(const ex::MaxWindow<T>& w) { return w.maximum(); }
-
-
-template <typename Window, typename M1, typename M2>
-void extremum_row_filter(const IDenseObject <M1>& source, IDenseObject<M2>& out, index_t radius)
-{
-    index_t h = source.rows();
-    index_t w = source.cols();
-
-    index_t window_size = 2 * radius + 1;
-    index_t initial     = std::min(radius, w-1);
-
-    for (index_t y = 0; y < h; ++y)
+    template <MinMaxMode mode, typename M1, typename M2>
+    void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>& out, index_t radius)
     {
-        // TODO: fix for case <source> is eigen eXpression
-        // TODO: use iterator in Window insted of pointer
-        Window sliding_window(window_size, &source.coeff(y, 0), w);
+        using Window = typename std::conditional
+                       <
+                           mode == MinMaxMode::kMinimum,
+                           ex::MinWindow<typename M1::Scalar>,
+                           ex::MaxWindow<typename M1::Scalar>
 
-        // fill window
-        for (index_t i = 0; i < initial; ++i)
-        {
-            sliding_window.next();
-        }
+                       >::type;
 
-        // fill result
-        for (index_t out_x = 0; out_x < w; ++out_x)
+        index_t h = source.rows();
+        index_t w = source.cols();
+
+        index_t window_size = 2 * radius + 1;
+        index_t initial     = std::min(radius, w-1);
+
+        for (index_t y = 0; y < h; ++y)
         {
-            sliding_window.next();
-            out(y, out_x) = get_extremum(sliding_window);
+            Window sliding_window(window_size, &source(y, 0), source.cols());
+
+            // fill window
+            for (index_t i = 0; i < initial; ++i)
+            {
+                sliding_window.next();
+            }
+
+            // fill result
+            for (index_t out_x = 0; out_x < w; ++out_x)
+            {
+                sliding_window.next();
+                out(y, out_x) = sliding_window.extremum();
+            }
         }
     }
-}
 
-template <typename Window, typename M1, typename M2>
-void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>&& out, index_t radius)
-{
-    // handle eigen expressions (temporary rvalue objects) as lvalue
-    extremum_row_filter<Window>(source, out, radius);
-}
-
-
+    template <MinMaxMode mode, typename M1, typename M2>
+    void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>&& out, index_t radius)
+    {
+        // handle eigen expressions (temporary rvalue objects) as lvalue
+        extremum_row_filter<mode>(source, out, radius);
+    }
 
 } // internal
 
 
-template<bool is_min_filter = true>
+
+template<MinMaxMode kMode>
 class MinMaxFilter final
 {
-    template<typename T>
-    using Window = typename std::conditional<is_min_filter, ex::MinWindow<T>, ex::MaxWindow<T>>::type;
-
 public:
     explicit MinMaxFilter(index_t radius) : m_radius(radius)
     {
@@ -111,8 +114,8 @@ public:
         M tmp(image.cols(), image.rows());
         M result(image.rows(), image.cols());
 
-        extremum_row_filter<Window<T>>(image,  tmp.transpose(), m_radius);
-        extremum_row_filter<Window<T>>(tmp, result.transpose(), m_radius);
+        extremum_row_filter<kMode>(image,  tmp.transpose(), m_radius);
+        extremum_row_filter<kMode>(tmp, result.transpose(), m_radius);
 
         return result;
     }
@@ -127,8 +130,8 @@ public:
 
         M tmp(image.cols(), image.rows());
 
-        extremum_row_filter<Window<T>>(image, tmp.transpose(), m_radius);
-        extremum_row_filter<Window<T>>(tmp, image.transpose(), m_radius);
+        extremum_row_filter<kMode>(image, tmp.transpose(), m_radius);
+        extremum_row_filter<kMode>(tmp, image.transpose(), m_radius);
     }
 
 
@@ -152,9 +155,9 @@ private:
 };
 
 
-using MinFilter = MinMaxFilter<true>;
+using MinFilter = MinMaxFilter<MinMaxMode::kMinimum>;
 
-using MaxFilter = MinMaxFilter<false>;
+using MaxFilter = MinMaxFilter<MinMaxMode::kMaximum>;
 
 
 }
