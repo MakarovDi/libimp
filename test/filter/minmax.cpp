@@ -69,6 +69,99 @@ TEST(min_filter, radius_2)
 }
 
 
+TEST(min_filter, radius_2_4)
+{
+    Matrix<int> test({
+        { 1, 2, 3, 4 },
+        { 1, 2, 3, 4 },
+        { 2, 2, 2, 2 },
+        { 2, 2, 2, 0 },
+        { 2, 2, 2, 2 },
+        { 2, 2, 2, 2 },
+        { 1, 2, 2, 1 },
+        { 2, 2, 2, 2 },
+        { 7, 6, 5, 4 },
+    });
+
+
+    Matrix<int> expected({
+        { 1, 1, 1, 2 },
+        { 1, 0, 0, 0 },
+        { 1, 0, 0, 0 },
+        { 1, 0, 0, 0 },
+        { 1, 0, 0, 0 },
+        { 1, 0, 0, 0 },
+        { 1, 1, 1, 1 },
+        { 1, 1, 1, 1 },
+        { 1, 1, 1, 1 },
+    });
+
+    ASSERT_TRUE( MinFilter(2).apply(test) == expected );
+}
+
+TEST(min_filter, radius_2_2)
+{
+    Matrix<int> test({
+        { 1, 2 },
+        { 1, 2 },
+        { 2, 2 },
+        { 2, 2 },
+        { 2, 2 },
+        { 2, 2 },
+        { 3, 2 },
+        { 1, 2 },
+        { 7, 6 },
+    });
+
+
+    Matrix<int> expected({
+        { 1, 1 },
+        { 1, 1 },
+        { 1, 1 },
+        { 1, 1 },
+        { 2, 2 },
+        { 1, 1 },
+        { 1, 1 },
+        { 1, 1 },
+        { 1, 1 },
+    });
+
+    ASSERT_TRUE( MinFilter(2).apply(test) == expected );
+}
+
+
+
+TEST(min_filter, radius_2_1)
+{
+    Matrix<int> test({
+        { 1 },
+        { 2 },
+        { 2 },
+        { 2 },
+        { 2 },
+        { 2 },
+        { 1 },
+        { 0 },
+        { 7 },
+    });
+
+
+    Matrix<int> expected({
+        { 1 },
+        { 1 },
+        { 1 },
+        { 2 },
+        { 1 },
+        { 0 },
+        { 0 },
+        { 0 },
+        { 0 },
+    });
+
+    ASSERT_TRUE( MinFilter(2).apply(test) == expected );
+}
+
+
 TEST(min_filter, radius_10)
 {
     Matrix<int> test({
