@@ -10,7 +10,7 @@ add_executable(ImpTests
     io/ppm.cpp
     io/pgm.cpp
     filter/minmax.cpp
-)
+    common/traits.cpp)
 
 
 target_link_libraries(ImpTests PRIVATE ex gtest gtest_main)

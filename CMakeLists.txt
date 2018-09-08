@@ -63,7 +63,9 @@ set(HEADERS
     include/imp/image/rgb_image
     include/imp/image/image
     include/imp/image/operator
-    include/imp/filter/minmax)
+    include/imp/filter/minmax
+    include/imp/common/traits
+)
 
 
 # define and export library

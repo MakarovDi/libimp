@@ -1,0 +1,77 @@
+#ifndef    IMP_COMMON_TRAITS_HEADER
+#   define IMP_COMMON_TRAITS_HEADER
+
+#include <type_traits>
+#include "imp/common/matrix"
+
+
+namespace imp
+{
+
+
+//
+// is_eigen_xpr<T> - check whether T is eigen expression or not
+//
+template <class T>
+struct is_eigen_xpr
+{
+    constexpr static bool value = !(T::Flags & Eigen::NestByRefBit);
+};
+
+
+//
+// eigen_decay - deduces underlying dense object, useful for expressions:
+//
+//    * eigen_decay<Matrix<T, 3, 4>> -> Matrix<T, 3, 4>
+//    * eigen_decay<Transpose<Matrix<T, 3, 4>>> -> Matrix<T, 3, 4>
+//    * eigen_decay<Block<Array<T>>> -> Array<T>
+//
+template <class T>
+class eigen_decay
+{
+    using V = typename T::value_type;
+public:
+    using type = typename std::conditional
+    <
+        std::is_same<typename T::PlainObject, typename T::PlainMatrix>::value,
+        Matrix<V, T::RowsAtCompileTime, T::ColsAtCompileTime, T::MaxRowsAtCompileTime, T::MaxColsAtCompileTime>,
+        Array <V, T::RowsAtCompileTime, T::ColsAtCompileTime, T::MaxRowsAtCompileTime, T::MaxColsAtCompileTime>
+
+    >::type;
+
+    //
+    // Note: can't use T::PlainObject directly because in some cases it miss RowMajor bit (transpose() for example)
+    //
+};
+
+
+//
+// eigen_transpose - swap compile-time dimensions:
+//
+//   * Matrix<T, 3, 4> -> Matrix<T, 4, 3>
+//   * Matrix<T> -> Matrix<T>
+//
+template <class T>
+class eigen_transpose
+{
+    using V = typename T::value_type;
+public:
+    using type = typename std::conditional
+    <
+        std::is_same<typename T::PlainObject, typename T::PlainMatrix>::value,
+        Matrix<V, T::ColsAtCompileTime, T::RowsAtCompileTime, T::MaxColsAtCompileTime, T::MaxRowsAtCompileTime>,
+        Array <V, T::ColsAtCompileTime, T::RowsAtCompileTime, T::MaxColsAtCompileTime, T::MaxRowsAtCompileTime>
+
+    >::type;
+
+};
+
+
+//
+// TODO:
+//  * make_dynamic: Matrix<T, 3, 4> -> Matrix<T, Dynamic, Dynamic>
+//
+
+}
+
+#endif // IMP_COMMON_TRAITS_HEADER
