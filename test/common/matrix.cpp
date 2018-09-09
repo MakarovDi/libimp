@@ -9,7 +9,7 @@ using namespace imp;
 using testing::Types;
 
 
-template <typename T> class MatrixTests: public ::testing::Test { };
+template <typename T> class matrix: public ::testing::Test { };
 
 
 using MathTypes = Types
@@ -18,10 +18,10 @@ using MathTypes = Types
     float, double, long double
 >;
 
-TYPED_TEST_CASE(MatrixTests, MathTypes);
+TYPED_TEST_CASE(matrix, MathTypes);
 
 
-TYPED_TEST(MatrixTests, default_ctor)
+TYPED_TEST(matrix, default_ctor)
 {
     Matrix<TypeParam> m(2, 3);
 
@@ -31,7 +31,7 @@ TYPED_TEST(MatrixTests, default_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, raw_ptr_copy_ctor)
+TYPED_TEST(matrix, raw_ptr_copy_ctor)
 {
     using T = TypeParam;
 
@@ -61,7 +61,7 @@ TYPED_TEST(MatrixTests, raw_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, raw_ptr_reuse_ctor)
+TYPED_TEST(matrix, raw_ptr_reuse_ctor)
 {
     using T = TypeParam;
     
@@ -81,7 +81,7 @@ TYPED_TEST(MatrixTests, raw_ptr_reuse_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, const_raw_ptr_copy_ctor)
+TYPED_TEST(matrix, const_raw_ptr_copy_ctor)
 {
     using T = TypeParam;
 
@@ -104,7 +104,7 @@ TYPED_TEST(MatrixTests, const_raw_ptr_copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, const_raw_ptr_reuse_ctor)
+TYPED_TEST(matrix, const_raw_ptr_reuse_ctor)
 {
     using T = TypeParam;
 
@@ -126,7 +126,7 @@ TYPED_TEST(MatrixTests, const_raw_ptr_reuse_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, copy_ctor)
+TYPED_TEST(matrix, copy_ctor)
 {
     using T = TypeParam;
 
@@ -164,7 +164,7 @@ TYPED_TEST(MatrixTests, copy_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, copy_operator)
+TYPED_TEST(matrix, copy_operator)
 {
     using T = TypeParam;
 
@@ -209,7 +209,7 @@ TYPED_TEST(MatrixTests, copy_operator)
 }
 
 
-TYPED_TEST(MatrixTests, copy_array_operator)
+TYPED_TEST(matrix, copy_array_operator)
 {
     using T = TypeParam;
 
@@ -259,7 +259,7 @@ TYPED_TEST(MatrixTests, copy_array_operator)
 }
 
 
-TYPED_TEST(MatrixTests, move_ctor)
+TYPED_TEST(matrix, move_ctor)
 {
     using T = TypeParam;
 
@@ -280,7 +280,7 @@ TYPED_TEST(MatrixTests, move_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, move_rvalue_ctor)
+TYPED_TEST(matrix, move_rvalue_ctor)
 {
     using T = TypeParam;
 
@@ -296,7 +296,7 @@ TYPED_TEST(MatrixTests, move_rvalue_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, move_operator)
+TYPED_TEST(matrix, move_operator)
 {
     using T = TypeParam;
 
@@ -331,7 +331,7 @@ TYPED_TEST(MatrixTests, move_operator)
 }
 
 
-TYPED_TEST(MatrixTests, vector_ctor)
+TYPED_TEST(matrix, vector_ctor)
 {
     using T = TypeParam;
 
@@ -352,7 +352,7 @@ TYPED_TEST(MatrixTests, vector_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, row_vector_ctor)
+TYPED_TEST(matrix, row_vector_ctor)
 {
     using T = TypeParam;
 
@@ -371,7 +371,7 @@ TYPED_TEST(MatrixTests, row_vector_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, matrix_array_ctor)
+TYPED_TEST(matrix, matrix_array_ctor)
 {
     using T = TypeParam;
 
@@ -389,7 +389,7 @@ TYPED_TEST(MatrixTests, matrix_array_ctor)
 }
 
 
-TYPED_TEST(MatrixTests, matrix_array_assignment)
+TYPED_TEST(matrix, matrix_array_assignment)
 {
     using T = TypeParam;
 
@@ -415,7 +415,7 @@ TYPED_TEST(MatrixTests, matrix_array_assignment)
 }
 
 
-TYPED_TEST(MatrixTests, map_array_assignment)
+TYPED_TEST(matrix, map_array_assignment)
 {
     using T = TypeParam;
 
