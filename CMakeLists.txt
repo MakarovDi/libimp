@@ -40,6 +40,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     add_compile_options(/wd4996)
 endif()
 
+
 # Generate and use config.h file
 configure_file (
     ${PROJECT_SOURCE_DIR}/config.in
@@ -64,6 +65,7 @@ set(HEADERS
     include/imp/image/image
     include/imp/image/operator
     include/imp/filter/minmax
+    include/imp/common/iterator
     include/imp/common/traits
 )
 
