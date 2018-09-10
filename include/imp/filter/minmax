@@ -219,6 +219,8 @@ public:
     template <typename M>
     void apply(ex::in_place_t, IDenseObject<M>&& image)
     {
+        static_assert(is_eigen_xpr<M>::value, "try to apply the filter inplace for non-expression r-value");
+        
         // handle eigen eXpressions like l-value objects
         apply(ex::in_place, image);
     }
