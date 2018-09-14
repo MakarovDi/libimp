@@ -16,9 +16,7 @@
 #include "imp/image/rgb_image"
 #include "imp/internal/read_word"
 
-//
-// TODO: buffering sourceStream.rdbuf()->pubsetbuf(0, 0);
-//
+
 
 namespace imp
 {
@@ -28,11 +26,10 @@ namespace ppm
 
 template <typename T>
 static void save(std::ostream& binary_stream,
-                    const RgbImage<T>& rgb,
-                    T white_level = std::numeric_limits<T>::max(),
-                    T black_level = T(0))
+                 const RgbImage<T>& rgb,
+                 T white_level = std::numeric_limits<T>::max(),
+                 T black_level = T(0))
 {
-    static_assert(Image::Flags & Eigen::RowMajor, "storage order must be RowMajor");
     static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
 
     index_t storage_size = 16;
@@ -85,9 +82,9 @@ static void save(std::ostream& binary_stream,
 
 template <typename T>
 static void save(const char* file_name,
-                    const RgbImage<T>& rgb,
-                    T white_level = std::numeric_limits<T>::max(),
-                    T black_level = T(0))
+                 const RgbImage<T>& rgb,
+                 T white_level = std::numeric_limits<T>::max(),
+                 T black_level = T(0))
 {
     std::ofstream ppm(file_name, std::ios_base::out | std::ios_base::binary);
 
@@ -148,8 +145,8 @@ static RgbImage<T> load(std::istream& binary_stream,
 
 template <typename T>
 static RgbImage<T> load(const char* file_name,
-                                        T white_level = std::numeric_limits<T>::max(),
-                                        T black_level = T(0))
+                                  T white_level = std::numeric_limits<T>::max(),
+                                  T black_level = T(0))
 {
     std::ifstream ppm(file_name, std::ios_base::in | std::ios_base::binary);
 

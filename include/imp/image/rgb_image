@@ -15,7 +15,7 @@ namespace imp
 template <typename T>
 struct RgbFacade
 {
-    using Image = Image<T, RgbFacade>;
+    using Image = Image<T, RgbFacade<T>>;
 public:
     enum ColorPlane : index_t
     {

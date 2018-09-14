@@ -27,8 +27,6 @@ struct EmptyFacade;
 template <typename T>
 using ImagePlane = Map<Matrix<T>>;
 
-// TODO: change [class Facade = EmptyFacade<T>] -> [template <class> class Facade = EmptyFacade]
-// TODO: when msvc grow up to it. msvc 2015 can't trace it
 
 template
 <
