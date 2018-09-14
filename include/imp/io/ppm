@@ -14,6 +14,8 @@
 #include <ex/range_check>
 
 #include "imp/image/rgb_image"
+#include "imp/internal/read_word"
+
 
 
 namespace imp
@@ -21,165 +23,139 @@ namespace imp
 namespace ppm
 {
 
-    namespace internal
+
+template <typename T>
+static void save(std::ostream& binary_stream,
+                 const RgbImage<T>& rgb,
+                 T white_level = std::numeric_limits<T>::max(),
+                 T black_level = T(0))
+{
+    static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
+
+    index_t storage_size = 16;
+
+    switch (ex::math_type<T>::classify)
     {
+        case ex::math_type<T>::kIntergral:
+            if (white_level > 65535)
+                throw std::logic_error("white level too high for PPM: 16-bit max");
 
-        inline ex::word16 read_word(std::istream& binary_stream, bool long_word)
-        {
-            int hi  = binary_stream.get();
-            if (hi == EOF)
-                throw std::runtime_error("unexpected end of stream/file");
+            if (white_level <= 255)
+                storage_size = 8;
+            break;
 
-            if (!long_word)
-                return ex::word16(uint16_t(hi));
-
-            int low = binary_stream.get();
-            if (low == EOF)
-                throw std::runtime_error("unexpected end of stream/file");
-
-            ex::range_check<ex::policy::DefaultNotice>(hi,  0, 255);
-            ex::range_check<ex::policy::DefaultNotice>(low, 0, 255);
-
-            return ex::word16(uint8_t(hi), uint8_t(low));
-        }
-
+        case ex::math_type<T>::kFloating:
+            break;
     }
 
+    const uint16_t ppm_max = uint16_t((1u << storage_size) - 1u);
 
+    // header
+    binary_stream << "P6"        << std::endl;
+    binary_stream << rgb.width() << " " << rgb.height() << std::endl;
+    binary_stream << ppm_max     << std::endl;
 
-    template <typename T>
-    static void save(std::ostream& binary_stream,
-                     const imp::RgbImage<T>& rgb,
-                     T white_level,
-                     T black_level = T(0))
+    T range = white_level - black_level;
+
+    // content
+    for (index_t i = 0; i < rgb.plane_size() ; ++i)
     {
-        static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
+        ex::range_check(rgb.r(i), black_level, white_level);
+        ex::range_check(rgb.g(i), black_level, white_level);
+        ex::range_check(rgb.b(i), black_level, white_level);
 
-        index_t storage_size;
+        ex::word16 r = uint16_t( std::round(ppm_max * float(rgb.r(i) - black_level) / range) );
+        ex::word16 g = uint16_t( std::round(ppm_max * float(rgb.g(i) - black_level) / range) );
+        ex::word16 b = uint16_t( std::round(ppm_max * float(rgb.b(i) - black_level) / range) );
 
-        switch (ex::math_type<T>::classify)
-        {
-            case ex::math_type<T>::kIntergral:
-                if (white_level > 65535)
-                    throw std::logic_error("white level too high for PPM: 16-bit max");
-                storage_size = white_level <= 255 ? 8 : 16;
-                break;
+        if (storage_size == 16) binary_stream.put(r.hi);
+        binary_stream.put(r.low);
 
-            case ex::math_type<T>::kFloating:
-                storage_size = 16;
-                break;
+        if (storage_size == 16) binary_stream.put(g.hi);
+        binary_stream.put(g.low);
 
-            default:
-                throw std::logic_error("something wrong...");
-        }
+        if (storage_size == 16) binary_stream.put(b.hi);
+        binary_stream.put(b.low);
+    }
+}
 
-        const uint16_t ppm_max = uint16_t((1u << storage_size) - 1u);
 
-        // header
-        binary_stream << "P6"        << std::endl;
-        binary_stream << rgb.width() << " " << rgb.height() << std::endl;
-        binary_stream << ppm_max     << std::endl;
+template <typename T>
+static void save(const char* file_name,
+                 const RgbImage<T>& rgb,
+                 T white_level = std::numeric_limits<T>::max(),
+                 T black_level = T(0))
+{
+    std::ofstream ppm(file_name, std::ios_base::out | std::ios_base::binary);
 
-        T range = white_level - black_level;
+    if (!ppm.is_open())
+        throw std::runtime_error("failed to create file");
 
-        // content
-        for (index_t i = 0; i < rgb.plane_size() ; ++i)
-        {
-            ex::range_check<ex::policy::DefaultNotice>(rgb.r(i), black_level, white_level);
-            ex::range_check<ex::policy::DefaultNotice>(rgb.g(i), black_level, white_level);
-            ex::range_check<ex::policy::DefaultNotice>(rgb.b(i), black_level, white_level);
+    ppm::save(ppm, rgb, white_level, black_level);
+};
 
-            ex::word16 r = uint16_t( std::round(ppm_max * float(rgb.r(i) - black_level) / range) );
-            ex::word16 g = uint16_t( std::round(ppm_max * float(rgb.g(i) - black_level) / range) );
-            ex::word16 b = uint16_t( std::round(ppm_max * float(rgb.b(i) - black_level) / range) );
 
-            if (storage_size == 16) binary_stream.put(uint8_t(r.hi));
-            binary_stream.put(r.low);
+template <typename T>
+static RgbImage<T> load(std::istream& binary_stream,
+                                    T white_level = std::numeric_limits<T>::max(),
+                                    T black_level = T(0))
+{
+    index_t  width;
+    index_t  height;
+    uint16_t ppm_range;
 
-            if (storage_size == 16) binary_stream.put(g.hi);
-            binary_stream.put(g.low);
+    std::string signature;
 
-            if (storage_size == 16) binary_stream.put(b.hi);
-            binary_stream.put(b.low);
-        }
+    binary_stream >> signature;
+    binary_stream >> width;
+    binary_stream >> height;
+    binary_stream >> ppm_range;
+
+    if (signature != "P6")
+        throw std::runtime_error("file is not PPM (no P6 signature)");
+
+    if (width < 0 || height < 0 || (ppm_range != 255 && ppm_range != 65535))
+        throw std::runtime_error("wrong file format");
+
+    RgbImage<T> image(height, width);
+
+    bool is_8bit_ppm = ppm_range == 255;
+    T    output_range = white_level - black_level;
+
+    binary_stream.get(); // skip single whitespace separator
+
+    for (index_t i = 0; i < image.plane_size(); ++i)
+    {
+        ex::word16 r_word = internal::read_word(binary_stream, is_8bit_ppm);
+        ex::word16 g_word = internal::read_word(binary_stream, is_8bit_ppm);
+        ex::word16 b_word = internal::read_word(binary_stream, is_8bit_ppm);
+
+        float r = float(r_word) / ppm_range;
+        float g = float(g_word) / ppm_range;
+        float b = float(b_word) / ppm_range;
+
+        image.r(i) = T(std::round(output_range * r)) + black_level;
+        image.g(i) = T(std::round(output_range * g)) + black_level;
+        image.b(i) = T(std::round(output_range * b)) + black_level;
     }
 
-
-    template <typename T>
-    static void save(const char* file_name,
-                     const imp::RgbImage<T>& rgb,
-                     T white_level,
-                     T black_level = T(0))
-    {
-        std::ofstream ppm(file_name, std::ios_base::out | std::ios_base::binary);
-
-        if (!ppm.is_open())
-            throw std::runtime_error("failed to create file");
-
-        imp::ppm::save(ppm, rgb, white_level, black_level);
-    };
+    return image;
+}
 
 
-    template <typename T>
-    static imp::RgbImage<T> load(std::istream& binary_stream,
-                                             T white_level,
-                                             T black_level = T(0))
-    {
-        index_t  width;
-        index_t  height;
-        uint16_t ppm_range;
+template <typename T>
+static RgbImage<T> load(const char* file_name,
+                                  T white_level = std::numeric_limits<T>::max(),
+                                  T black_level = T(0))
+{
+    std::ifstream ppm(file_name, std::ios_base::in | std::ios_base::binary);
 
-        std::string signature;
+    if (!ppm.is_open())
+        throw std::runtime_error("can't open file");
 
-        binary_stream >> signature;
-        binary_stream >> width;
-        binary_stream >> height;
-        binary_stream >> ppm_range;
+    return ppm::load<T>(ppm, white_level, black_level);
+}
 
-        if (signature != "P6")
-            throw std::runtime_error("file is not PPM (no P6 signature)");
-
-        if (width < 0 || height < 0 || (ppm_range != 255 && ppm_range != 65535))
-            throw std::runtime_error("wrong file format");
-
-        imp::RgbImage<T> image(width, height);
-
-        bool is_16bit_ppm = ppm_range == 65535;
-        T    output_range = white_level - black_level;
-
-        binary_stream.get(); // skip single whitespace separator
-
-        for (index_t i = 0; i < image.plane_size(); ++i)
-        {
-            ex::word16 r_word = internal::read_word(binary_stream, is_16bit_ppm);
-            ex::word16 g_word = internal::read_word(binary_stream, is_16bit_ppm);
-            ex::word16 b_word = internal::read_word(binary_stream, is_16bit_ppm);
-
-            float r = float(r_word) / ppm_range;
-            float g = float(g_word) / ppm_range;
-            float b = float(b_word) / ppm_range;
-
-            image.r(i) = T(std::round(output_range * r)) + black_level;
-            image.g(i) = T(std::round(output_range * g)) + black_level;
-            image.b(i) = T(std::round(output_range * b)) + black_level;
-        }
-
-        return image;
-    }
-
-
-    template <typename T>
-    static imp::RgbImage<T> load(const char* file_name,
-                                           T white_level,
-                                           T black_level = T(0))
-    {
-        std::ifstream ppm(file_name, std::ios_base::in | std::ios_base::binary);
-
-        if (!ppm.is_open())
-            throw std::runtime_error("can't open file");
-
-        return imp::ppm::load<T>(ppm, white_level, black_level);
-    }
 
 }
 }

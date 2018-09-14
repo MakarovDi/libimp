@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.2.0] - 14.09.2018
+
+
+**[+]** use Eigen3 as **Matrix** and **Image** core; `#include <imp/common/matrix>`  
+**[+]** added std::iterator support for Eigen; `#include <imp/common/iterator>`      
+**[+]** image min/max operations; `#include <imp/image/operator>`  
+**[+]** min/max filter added; `#include <imp/filter/minmax>`  
+ 
+
+**[*]** update `libex` to v0.4.0;  
+
 
 ## [v0.1.0] - 17.06.2018
  

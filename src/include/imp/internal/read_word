@@ -1,0 +1,40 @@
+#ifndef    IMP_INTERNAL_READ_WORD_HEADER
+#   define IMP_INTERNAL_READ_WORD_HEADER
+
+
+#include <stdexcept>
+#include <iostream>
+#include <ex/encoding/word16>
+#include <ex/range_check>
+
+
+namespace imp
+{
+namespace internal
+{
+
+
+inline ex::word16 read_word(std::istream& binary_stream, bool is_8bit_word)
+{
+    int hi  = binary_stream.get();
+    if (hi == EOF)
+        throw std::runtime_error("unexpected end of stream/file");
+
+    if (is_8bit_word)
+        return uint8_t(hi);
+
+    int low = binary_stream.get();
+    if (low == EOF)
+        throw std::runtime_error("unexpected end of stream/file");
+
+    ex::range_check(hi,  0, 255);
+    ex::range_check(low, 0, 255);
+
+    return { uint8_t(hi), uint8_t(low) };
+}
+
+
+
+}
+}
+#endif //IMP_INTERNAL_READ_WORD_HEADER

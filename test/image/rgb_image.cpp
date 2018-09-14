@@ -1,14 +1,17 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
+#  define eigen_assert(x) if (!(x)) { throw (std::runtime_error("error")); }
 #include <imp/image/rgb_image>
+
+
 
 
 using namespace imp;
 using testing::Types;
 
 
-template <typename T> class RgbImageTypeMixture: public ::testing::Test { };
+template <typename T> class rgb_image: public ::testing::Test { };
 
 
 using MathTypes = Types
@@ -17,31 +20,26 @@ using MathTypes = Types
     float, double, long double
 >;
 
-TYPED_TEST_CASE(RgbImageTypeMixture, MathTypes);
+TYPED_TEST_CASE(rgb_image, MathTypes);
 
 
-TYPED_TEST(RgbImageTypeMixture, default_ctor)
+TYPED_TEST(rgb_image, default_ctor)
 {
-    RgbImage<TypeParam> img(2, 3);
-    ASSERT_TRUE(img.is_own_memory());
+    RgbImage<TypeParam> img(3, 2);
 
     ASSERT_EQ(img.height(), 3);
     ASSERT_EQ(img.width(), 2);
     ASSERT_EQ(img.plane_size(), 3*2);
-    ASSERT_EQ(img.mem_size(), 3*3*2*sizeof(TypeParam));
+    ASSERT_EQ(img.size(), 3*3*2);
 
-    memset(img.ptr(), 0, size_t(img.mem_size()));
+    memset(img.data(), 0, sizeof(TypeParam)*size_t(img.size()));
 
     ASSERT_TRUE(img.r_plane() == img.g_plane());
     ASSERT_TRUE(img.r_plane() == img.b_plane());
-
-    ASSERT_FALSE(img.r_plane().is_own_memory());
-    ASSERT_FALSE(img.g_plane().is_own_memory());
-    ASSERT_FALSE(img.b_plane().is_own_memory());
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
+TYPED_TEST(rgb_image, raw_ptr_copy_ctor)
 {
     using T = TypeParam;
 
@@ -63,21 +61,16 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_copy_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kCopy);
-    ASSERT_TRUE(img.is_own_memory());
-    ASSERT_TRUE(img.ptr() != ptr);
+    RgbImage<T> img(2, 3, ptr, RawMemory::kCopy);
+    ASSERT_TRUE(img.data() != ptr);
 
     ASSERT_TRUE(img.r_plane() == r);
     ASSERT_TRUE(img.g_plane() == g);
     ASSERT_TRUE(img.b_plane() == b);
-
-    ASSERT_FALSE(img.r_plane().is_own_memory());
-    ASSERT_FALSE(img.g_plane().is_own_memory());
-    ASSERT_FALSE(img.b_plane().is_own_memory());
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
+TYPED_TEST(rgb_image, raw_ptr_move_ctor)
 {
     using T = TypeParam;
 
@@ -99,21 +92,16 @@ TYPED_TEST(RgbImageTypeMixture, raw_ptr_move_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(img.is_own_memory());
-    ASSERT_TRUE(img.ptr() == ptr);
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
+    ASSERT_TRUE(img.data() == ptr);
 
     ASSERT_TRUE(img.r_plane() == r);
     ASSERT_TRUE(img.g_plane() == g);
     ASSERT_TRUE(img.b_plane() == b);
-
-    ASSERT_FALSE(img.r_plane().is_own_memory());
-    ASSERT_FALSE(img.g_plane().is_own_memory());
-    ASSERT_FALSE(img.b_plane().is_own_memory());
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
+TYPED_TEST(rgb_image, from_array_ctor)
 {
     using T = TypeParam;
 
@@ -134,7 +122,6 @@ TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
         }
     });
 
-    ASSERT_TRUE(img.is_own_memory());
     ASSERT_TRUE(img.width() == 3);
     ASSERT_TRUE(img.height() == 2);
 
@@ -152,7 +139,7 @@ TYPED_TEST(RgbImageTypeMixture, from_array_ctor)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, copy_ctor)
+TYPED_TEST(rgb_image, copy_ctor)
 {
     using T = TypeParam;
 
@@ -174,24 +161,19 @@ TYPED_TEST(RgbImageTypeMixture, copy_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(img.is_own_memory());
+    RgbImage<T> img(2, 3, ptr, RawMemory::kCopy);
+    ASSERT_FALSE(img.data() == ptr);
 
     RgbImage<T> img2(img);
-    ASSERT_TRUE(img2.is_own_memory());
-    ASSERT_TRUE(img2.ptr() != img.ptr());
+    ASSERT_TRUE(img2.data() != img.data());
 
     ASSERT_TRUE(img2.r_plane() == r);
     ASSERT_TRUE(img2.g_plane() == g);
     ASSERT_TRUE(img2.b_plane() == b);
-
-    ASSERT_FALSE(img.r_plane().is_own_memory());
-    ASSERT_FALSE(img.g_plane().is_own_memory());
-    ASSERT_FALSE(img.b_plane().is_own_memory());
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, copy_operator)
+TYPED_TEST(rgb_image, copy_operator)
 {
     using T = TypeParam;
 
@@ -213,26 +195,20 @@ TYPED_TEST(RgbImageTypeMixture, copy_operator)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(img.is_own_memory());
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
 
     RgbImage<T> img2(3, 3);
 
     img2 = img;
-    ASSERT_TRUE(img2.is_own_memory());
-    ASSERT_TRUE(img2.ptr() != img.ptr());
+    ASSERT_TRUE(img2.data() != img.data());
 
     ASSERT_TRUE(img2.r_plane() == r);
     ASSERT_TRUE(img2.g_plane() == g);
     ASSERT_TRUE(img2.b_plane() == b);
-
-    ASSERT_FALSE(img.r_plane().is_own_memory());
-    ASSERT_FALSE(img.g_plane().is_own_memory());
-    ASSERT_FALSE(img.b_plane().is_own_memory());
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, move_ctor)
+TYPED_TEST(rgb_image, move_ctor)
 {
     using T = TypeParam;
 
@@ -254,24 +230,21 @@ TYPED_TEST(RgbImageTypeMixture, move_ctor)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(img.is_own_memory());
-    ASSERT_TRUE(img.ptr() == ptr);
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
+    ASSERT_TRUE(img.data() == ptr);
 
     RgbImage<T> img2(std::move(img));
 
-    ASSERT_TRUE(img2.ptr() == ptr);
-    ASSERT_FALSE(img2.is_own_memory());
+    ASSERT_TRUE(img2.data() == ptr);
     ASSERT_EQ(img2.width(), 3);
     ASSERT_EQ(img2.height(), 2);
 
-    ASSERT_FALSE(img.is_own_memory());
-    ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.mem_size(), 0);
+    ASSERT_EQ(img.data(), nullptr);
+    ASSERT_EQ(img.size(), 0);
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, move_operator)
+TYPED_TEST(rgb_image, move_operator)
 {
     using T = TypeParam;
 
@@ -293,26 +266,23 @@ TYPED_TEST(RgbImageTypeMixture, move_operator)
     Matrix<T> b({ {T(3*1), T(3*2), T(3*3) },
                   {T(3*4), T(3*5), T(3*6) } });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
-    ASSERT_FALSE(img.is_own_memory());
-    ASSERT_TRUE(img.ptr() == ptr);
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
+    ASSERT_TRUE(img.data() == ptr);
 
     RgbImage<T> img2(1, 1);
 
     img2 = std::move(img);
 
-    ASSERT_TRUE(img2.ptr() == ptr);
-    ASSERT_FALSE(img2.is_own_memory());
+    ASSERT_TRUE(img2.data() == ptr);
     ASSERT_EQ(img2.width(), 3);
     ASSERT_EQ(img2.height(), 2);
 
-    ASSERT_FALSE(img.is_own_memory());
-    ASSERT_EQ(img.ptr(), nullptr);
-    ASSERT_EQ(img.mem_size(), 0);
+    ASSERT_EQ(img.data(), nullptr);
+    ASSERT_EQ(img.size(), 0);
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, indexing)
+TYPED_TEST(rgb_image, indexing)
 {
     using T = TypeParam;
 
@@ -325,7 +295,7 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
                 T(3*1), T(3*2), T(3*3),
                 T(3*4), T(3*5), T(3*6)  };
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
 
 
 
@@ -376,64 +346,58 @@ TYPED_TEST(RgbImageTypeMixture, indexing)
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, planes)
+TYPED_TEST(rgb_image, planes_access)
 {
     using T = TypeParam;
 
-    T ptr[] = { T(1), T(2), T(3),
-                T(4), T(5), T(6),
+    const Matrix<T, 2, 3> r_data
+    ({
+        { T(1), T(2), T(3) },
+        { T(4), T(5), T(6) }
+    });
 
-                T(2*1), T(2*2), T(2*3),
-                T(2*4), T(2*5), T(2*6),
+    const Matrix<T, 2, 3> g_data
+    ({
+         { T(2*1), T(2*2), T(2*3) },
+         { T(2*4), T(2*5), T(2*6) }
+    });
 
-                T(3*1), T(3*2), T(3*3),
-                T(3*4), T(3*5), T(3*6)  };
+    const Matrix<T, 2, 3> b_data
+    ({
+         { T(3*1), T(3*2), T(3*3) },
+         { T(3*4), T(3*5), T(3*6) }
+    });
 
-    RgbImage<T> img(3, 2, ptr, RawMemory::kReuse);
+    T ptr[] = {
+        T(1), T(2), T(3),
+        T(4), T(5), T(6),
 
+        T(2*1), T(2*2), T(2*3),
+        T(2*4), T(2*5), T(2*6),
 
-    const Matrix<T> r_mx = img.r_plane();
-    const Matrix<T> g_mx = img.g_plane();
-    const Matrix<T> b_mx = img.b_plane();
+        T(3*1), T(3*2), T(3*3),
+        T(3*4), T(3*5), T(3*6)
+    };
 
+    RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
 
-    const Matrix<T>& r1 = img.r_plane();
-          Matrix<T>  r2 = img.r_plane();
+    const ImagePlane<T>& r_mx = img.r_plane();
+          ImagePlane<T>& r1   = img.r_plane();
 
-    ASSERT_TRUE(r1.ptr() == r2.ptr());
+    ASSERT_TRUE(r_mx.data() == r1.data());
+    ASSERT_TRUE(r1.data() == ptr);
 
-    Matrix<T> m(3, 3, ptr+4, RawMemory::kCopy);
+    r1 = std::move(g_data);
 
-    r2 = std::move(m);
-    ASSERT_TRUE(r2.ptr() != r1.ptr());
-    ASSERT_TRUE(r1 == r_mx);
+    ASSERT_TRUE(r1.data() == ptr);
+    ASSERT_TRUE(img.r_plane() == g_data);
 
-
-    const Matrix<T>& g1 = img.g_plane();
-          Matrix<T>  g2 = img.g_plane();
-
-    ASSERT_TRUE(g1.ptr() == g2.ptr());
-
-    m = Matrix<T>(3, 3, ptr+4, RawMemory::kCopy);
-
-    g2 = std::move(m);
-    ASSERT_TRUE(g2.ptr() != g1.ptr());
-    ASSERT_TRUE(g1 == g_mx);
-
-    const Matrix<T>& b1 = img.b_plane();
-          Matrix<T>  b2 = img.b_plane();
-
-    ASSERT_TRUE(b1.ptr() == b2.ptr());
-
-    m = Matrix<T>(3, 3, ptr+4, RawMemory::kCopy);
-
-    b2 = std::move(m);
-    ASSERT_TRUE(b2.ptr() != b1.ptr());
-    ASSERT_TRUE(b1 == b_mx);
+    Matrix<T, 3, 3> m;
+    ASSERT_THROW(r1 = m, std::runtime_error);
 }
 
 
-TYPED_TEST(RgbImageTypeMixture, equality_operator)
+TYPED_TEST(rgb_image, equality_operator)
 {
     using T = TypeParam;
 
@@ -446,9 +410,9 @@ TYPED_TEST(RgbImageTypeMixture, equality_operator)
                 T(3*1), T(3*2), T(3*3),
                 T(3*4), T(3*5), T(3*6)  };
 
-    RgbImage<T> img1(3, 2, ptr, RawMemory::kReuse);
-    RgbImage<T> img2(2, 3, ptr, RawMemory::kReuse);
-    RgbImage<T> img3(3, 2, ptr, RawMemory::kCopy);
+    RgbImage<T> img1(2, 3, ptr, RawMemory::kMap);
+    RgbImage<T> img2(3, 2, ptr, RawMemory::kMap);
+    RgbImage<T> img3(2, 3, ptr, RawMemory::kCopy);
 
     ASSERT_TRUE(img1 != img2);
     ASSERT_TRUE(img3 == img1);

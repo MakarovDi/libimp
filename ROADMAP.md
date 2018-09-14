@@ -1,11 +1,17 @@
 # Roadmap
 
+## 07.2018
+
+* image filtering `filter`:
+	- [ ] min/max filter approximation;
+
+
 ## 08.04.2018
 
 * `common/matrix`:      
-    - [ ] split into 2 templates: fixed size and dynamic size;  
+    - [x] split into 2 templates: fixed size and dynamic size;  
     - [x] initialization with { *, *, ... } fixed size array;
-    - [ ] use `eigen` as matrix core;
+    - [x] use `eigen` as matrix core;
     - [ ] add math operators;
 
 * read/write lossless image formats `imp/io`:
@@ -36,7 +42,7 @@
 	- [ ] box filter;
 	- [ ] gaussian filter;
 	- [ ] median filter;
-	- [ ] min/max filter;
+	- [x] min/max filter;
 	- [ ] bilateral filter;
 	- [ ] guided filter;
 	- [ ] integral image + box filter compatibility;

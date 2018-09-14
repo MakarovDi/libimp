@@ -1,0 +1,23 @@
+#ifndef    IMP_EIGEN_MATRIX_PLUGIN_HEADER
+#   define IMP_EIGEN_MATRIX_PLUGIN_HEADER
+
+
+// Eigen::Matrix plugin
+
+public:
+    // matrix initialization
+    template <Index M, Index N>
+    explicit Matrix(const _Scalar (&data)[M][N]) : Matrix(M, N)
+    {
+        for (Index y = 0; y < M; ++y)
+            for (Index x = 0; x < N; ++x)
+            {
+                this->operator()(y, x) = data[y][x];
+            }
+    }
+
+
+    using MatrixBase<Matrix>::operator=;
+
+
+#endif

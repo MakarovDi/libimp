@@ -40,14 +40,15 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     add_compile_options(/wd4996)
 endif()
 
+
 # Generate and use config.h file
 configure_file (
     ${PROJECT_SOURCE_DIR}/config.in
     ${PROJECT_BINARY_DIR}/include/imp/config
-    @ONLY                                          # replace VAR with pattern @VAR@ only (not ${VAR})
+    @ONLY                                              # replace VAR with pattern @VAR@ only (not ${VAR})
 )
-add_definitions("-DHAVE_CONFIG_H")                 # define HAVE_CONFIG_H for project
-include_directories(${PROJECT_BINARY_DIR}/include) # for config.h using
+add_definitions("-DHAVE_CONFIG_H")                     # define HAVE_CONFIG_H for project
+include_directories(${PROJECT_BINARY_DIR}/include)     # for config.h using
 
 # Enumerate source files
 set(SOURCES
@@ -60,9 +61,13 @@ set(HEADERS
     include/imp/io/ppm
     include/imp/io/pgm
     include/imp/common/matrix
-    include/imp/common/operator
     include/imp/image/rgb_image
-    include/imp/image/image)
+    include/imp/image/image
+    include/imp/image/operator
+    include/imp/filter/minmax
+    include/imp/common/iterator
+    include/imp/common/traits
+)
 
 
 # define and export library
@@ -73,8 +78,10 @@ set_target_properties(imp PROPERTIES LINKER_LANGUAGE CXX
                                      CXX_STANDARD 14
                                      CXX_STANDARD_REQUIRED ON)
 
-# populate ex headers
+# populate headers
+target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/src/include) # internal headers
 target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(imp PUBLIC ${PROJECT_SOURCE_DIR}/external/eigen)
 
 # initialize external libs
 add_subdirectory(external)

@@ -1,0 +1,148 @@
+#ifndef    IMP_COMMON_ITERATOR_HEADER
+#   define IMP_COMMON_ITERATOR_HEADER
+
+#include <ex/meta/selector>
+#include <ex/range_check>
+#include <ex/iterator/index_iterator>
+
+#include "imp/common/matrix"
+#include "imp/common/traits"
+
+
+namespace imp
+{
+
+
+namespace internal
+{
+
+//
+// Note: Eigen's operator[] works only for vectors, so use operator() instead
+//
+struct BracketOperatorRandomAccess
+{
+    template <class C>
+    static inline auto get(const C& container, index_t index) -> const typename C::Scalar&
+    {
+        ex::range_check(index, container.size());
+        return container.coeffRef(index);
+    }
+
+
+    template <class C>
+    static inline auto get(C& container, index_t index) -> typename C::Scalar&
+    {
+        ex::range_check(index, container.size());
+        return container.coeffRef(index);
+    }
+};
+
+
+
+template <typename EigenObject>
+class iterator_deduction
+{
+    using Container = typename std::conditional< imp::is_eigen_xpr<EigenObject>::value, EigenObject, EigenObject* >::type;
+    using Scalar    = typename EigenObject::Scalar;
+    using ValueType = typename std::conditional< std::is_const<EigenObject>::value, const Scalar, Scalar >::type;
+
+private:
+    enum ContainerType : bool { kExpression = false, kDenseObject = true };
+
+    template <class M>
+    static inline Container& ctor_input(M& obj, ex::bool_selector<ContainerType::kDenseObject>) { return static_cast<Container&>(obj); }
+
+    template <class M>
+    static inline Container  ctor_input(M& obj, ex::bool_selector<ContainerType::kExpression>)  { return static_cast<Container>(&obj); }
+
+public:
+    using type = ex::index_iterator<ValueType, Container, internal::BracketOperatorRandomAccess>;
+
+public:
+    template <class M>
+    static inline auto ctor_input(M& obj) -> decltype(auto)
+    {
+        return ctor_input(obj, ex::bool_selector<imp::is_eigen_xpr<EigenObject>::value>{});
+    }
+};
+
+
+}
+
+
+template <class EigenObject>
+using eigen_iterator = typename imp::internal::iterator_deduction<EigenObject>::type;
+
+
+template <class M>
+auto make_eigen_iterator(imp::IDenseObject<M>& m, index_t index) -> decltype(auto)
+{
+    return eigen_iterator<M>(internal::iterator_deduction<M>::ctor_input(m), index);
+}
+
+
+template <class M>
+auto make_eigen_iterator(const imp::IDenseObject<M>& m, index_t index) -> decltype(auto)
+{
+    return eigen_iterator<const M>(internal::iterator_deduction<const M>::ctor_input(m), index);
+}
+
+
+template <class M>
+auto make_eigen_iterator(imp::IDenseObject<M>&& m, index_t index) -> decltype(auto)
+{
+    static_assert(imp::is_eigen_xpr<M>::value, "attempt to create iterator for a temporary matrix/array object");
+    return eigen_iterator<M>(internal::iterator_deduction<M>::ctor_input(m), index);
+}
+
+
+}
+
+
+namespace Eigen
+{
+
+
+template <class M>
+auto begin(imp::IDenseObject<M>& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, 0);
+}
+
+template <class E>
+auto begin(imp::IDenseObject<E>&& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, 0);
+}
+
+template <class M>
+auto begin(const imp::IDenseObject<M>& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, 0);
+}
+
+
+template <class M>
+auto end(imp::IDenseObject<M>& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, obj.size());
+}
+
+template <class E>
+auto end(imp::IDenseObject<E>&& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, obj.size());
+}
+
+
+template <class M>
+auto end(const imp::IDenseObject<M>& obj) -> decltype(auto)
+{
+    return imp::make_eigen_iterator(obj, obj.size());
+}
+
+
+}
+
+
+#endif // IMP_COMMON_ITERATOR_HEADER

@@ -1,0 +1,239 @@
+#ifndef    IMP_FILTER_MINMAX_HEADER
+#   define IMP_FILTER_MINMAX_HEADER
+
+#include <type_traits>
+
+#include <ex/utility>
+#include <ex/meta/selector>
+
+#include "imp/common/matrix"
+#include "imp/common/traits"
+
+
+//
+// O(M*N*r) implementation of 2D Min/Max filter
+//
+//      M x N - matrix, r - filter radius
+//
+// Usage:
+//
+//   1)  auto min_matrix = imp::MinFilter(4).apply(matrix);
+//
+//   2)  imp::MinFilter(4).apply(ex::in_place, matrix);
+//
+//
+// Note:
+//
+//   implementation with O(M*N*log(r)) possible, but
+//   maintaining queue for log(r) search absorb all
+//   time advantage and benefit will appear only
+//   on really large r.
+//
+
+namespace imp
+{
+
+
+enum MinMaxMode : int
+{
+    kMaximum = 0,
+    kMinimum
+};
+
+
+namespace internal
+{
+
+
+template <MinMaxMode kMode>
+class extremum
+{
+    template <typename T>
+    static bool check(const T& candidate, const T& current, ex::selector<MinMaxMode::kMinimum>)
+    {
+        return candidate <= current;
+    }
+
+
+    template <typename T>
+    static bool check(const T& candidate, const T& current, ex::selector<MinMaxMode::kMaximum>)
+    {
+        return candidate >= current;
+    }
+
+public:
+    template <typename T>
+    static bool check(const T& candidate, const T& current)
+    {
+        return check(candidate, current, ex::selector<kMode>{});
+    }
+
+
+    template <class Row>
+    static index_t index(const Row& row, index_t window_first, index_t window_last)
+    {
+        index_t index = window_first;
+
+        for (index_t i = window_first + 1; i <= window_last; ++i)
+        {
+            if (check(row(i), row(index)))
+            {
+                index = i;
+            }
+        }
+
+        return index;
+    }
+};
+
+
+
+template <MinMaxMode kMode, typename M1, typename M2>
+void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>& dest, index_t radius)
+{
+    index_t height = source.rows();
+    index_t width  = source.cols();
+
+    radius = std::min(radius, width - 1);
+
+    // TODO: C++17: std::for_each(std::execution::par_unseq)
+
+    for (index_t y = 0; y < height; ++y)
+    {
+        auto row_src = source.row(y);
+        auto row_dst = dest.row(y);
+
+        index_t window_first = 0;
+        index_t window_last  = radius;
+        index_t e_idx = extremum<kMode>::index(row_src, 0, radius - 1);
+
+        index_t dst_x = 0;
+
+        do // initialize window to full size
+        {
+            if (extremum<kMode>::check(row_src(window_last), row_src(e_idx)))
+            {
+                e_idx = window_last;
+            }
+
+            row_dst(dst_x++) = row_src(e_idx);
+
+            window_last = std::min(window_last + 1, width - 1);
+        }
+        while (dst_x <= radius);
+
+        // slide with full window
+        while (dst_x < width - radius)
+        {
+            ++window_first;
+
+            if (extremum<kMode>::check(row_src(window_last), row_src(e_idx)))
+            {
+                e_idx = window_last;
+            }
+            else if (e_idx == window_first - 1)
+            {
+                e_idx = extremum<kMode>::index(row_src, window_first, window_last);
+            }
+
+            row_dst(dst_x++) = row_src(e_idx);
+
+            ++window_last;
+        }
+
+        // finalize sliding
+        while (dst_x < width)
+        {
+            ++window_first;
+
+            if (e_idx == window_first - 1)
+            {
+                e_idx = extremum<kMode>::index(row_src, window_first, width - 1);
+            }
+
+            row_dst(dst_x++) = row_src(e_idx);
+        }
+    }
+}
+
+
+template <MinMaxMode kMode, typename M1, typename M2>
+void extremum_row_filter(const IDenseObject<M1>& source, IDenseObject<M2>&& out, index_t radius)
+{
+    //
+    // Note: handle eigen expressions (temporary rvalue objects) as lvalue, because
+    //       they are a reference to the real lvalue object
+    //
+    extremum_row_filter<kMode>(source, out, radius);
+}
+
+
+} // internal
+
+
+template <MinMaxMode kMode>
+class MinMaxFilter final
+{
+public:
+    explicit MinMaxFilter(index_t radius) : m_radius(radius)
+    {
+        if (radius <= 0)
+            throw std::logic_error("invalid filter radius: <= 0");
+    }
+
+public:
+    index_t radius() const { return m_radius; }
+
+public:
+    template <typename M>
+    auto apply(const IDenseObject<M>& image) -> decltype(auto)
+    {
+        using namespace internal;
+
+        using T1 = typename eigen_decay<M>::type; // strip eigen expressions
+        T1 result(image.rows(), image.cols());
+
+        using T2 = typename eigen_transpose<T1>::type; // swap compile-time dimensions
+        T2 tmp(image.cols(), image.rows());
+
+        extremum_row_filter<kMode>(image,  tmp.transpose(), m_radius);
+        extremum_row_filter<kMode>(tmp, result.transpose(), m_radius);
+
+        return result;
+    }
+
+
+    template <typename M>
+    void apply(ex::in_place_t, IDenseObject<M>& image)
+    {
+        using namespace internal;
+
+        using T = typename eigen_transpose<M>::type; // swap compile-time dimensions
+        T tmp(image.cols(), image.rows());
+
+        extremum_row_filter<kMode>(image, tmp.transpose(), m_radius);
+        extremum_row_filter<kMode>(tmp, image.transpose(), m_radius);
+    }
+
+
+    template <typename M>
+    void apply(ex::in_place_t, IDenseObject<M>&& image)
+    {
+        static_assert(is_eigen_xpr<M>::value, "try to apply the filter inplace for non-expression r-value");
+        
+        // handle eigen eXpressions like l-value objects
+        apply(ex::in_place, image);
+    }
+
+private:
+    index_t m_radius;
+};
+
+
+using MinFilter = MinMaxFilter<MinMaxMode::kMinimum>;
+
+using MaxFilter = MinMaxFilter<MinMaxMode::kMaximum>;
+
+
+}
+#endif // IMP_FILTER_MINMAX_HEADER

@@ -87,8 +87,6 @@ TEST(pgm_test, black_level)
 
     std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
 
-//    imp::pgm::save("d:\\test.pgm", img, 255, 16);
-
     imp::pgm::save(stream, img, 255, 16);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x35, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32,
                                        0x35, 0x35, 0x0a, 0x00, 0xff, 0x00, 0x11 }));
@@ -99,8 +97,8 @@ TEST(pgm_test, load_8bit_ppm)
 {
     imp::Matrix<int> img1
     ({
-        { 16, 32 },
-        { 16, 10 }
+        { 16, 32, 3 },
+        { 16, 10, 4 }
     });
 
     std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
@@ -119,8 +117,8 @@ TEST(pgm_test, load_float)
 {
     imp::Matrix<double> img1
     ({
-        { 32.0, 16.0 },
-        { 16.0, 32.0 },
+        { 32.0, 16.0, 4.0 },
+        { 16.0, 32.0, 4.0 },
     });
 
     std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
@@ -139,8 +137,8 @@ TEST(pgm_test, load_16bit_ppm)
 {
     imp::Matrix<int> img1
     ({
-        { 16, 1600 },
-        { 16, 32   }
+        { 16, 1600, 0 },
+        { 16, 32,   0 }
     });
 
 
@@ -160,8 +158,8 @@ TEST(pgm_test, load_with_black_level)
 {
     imp::Matrix<int> img1
     ({
-        { 16, 32  },
-        { 16, 255 },
+        { 16, 32,  18 },
+        { 16, 255, 18 },
     });
 
 
