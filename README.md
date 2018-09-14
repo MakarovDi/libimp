@@ -19,7 +19,7 @@ Building blocks and complete algorithms for image processing.
 #### Windows ####
 
  * CMake >= 3.1
- * Microsoft Visual Studio 2015 Toolchain
+ * Microsoft Visual Studio 2017 Toolchain
   
 
 ## Usage
@@ -56,8 +56,8 @@ target_link_libraries(your_project imp)
 
 #### MSVC/Windows ####
 
-Generate project for MS Visual Studio with command:
+VS2017 has cmake support or you can generate project with:
 
-    # cmake -G "Visual Studio 14"
+    # cmake -G "Visual Studio 15"
 
 

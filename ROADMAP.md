@@ -9,9 +9,9 @@
 ## 08.04.2018
 
 * `common/matrix`:      
-    - [ ] split into 2 templates: fixed size and dynamic size;  
+    - [x] split into 2 templates: fixed size and dynamic size;  
     - [x] initialization with { *, *, ... } fixed size array;
-    - [ ] use `eigen` as matrix core;
+    - [x] use `eigen` as matrix core;
     - [ ] add math operators;
 
 * read/write lossless image formats `imp/io`:
