@@ -31,6 +31,7 @@ static void save(std::ostream& binary_stream,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
+    static_assert(Image::Flags & Eigen::RowMajor, "storage order must be RowMajor");
     static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
 
     index_t storage_size = 16;
