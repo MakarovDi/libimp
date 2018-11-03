@@ -1,0 +1,80 @@
+#ifndef    IMP_INTERNAL_READ_WORD_HEADER
+#   define IMP_INTERNAL_READ_WORD_HEADER
+
+
+#include <stdexcept>
+#include <cctype>
+
+#include <ex/encoding/word16>
+#include <ex/stream/interface>
+#include <ex/range_check>
+
+
+namespace imp
+{
+namespace internal
+{
+
+
+inline ex::word16 read_word(ex::IInputStream& binary_stream, bool is_8bit_word)
+{
+    ex::IInputStream::byte hi;
+    ex::IInputStream::byte low;
+
+    hi = binary_stream.read_byte();
+    if (!hi.is_valid())
+        throw std::runtime_error("unexpected end of stream");
+
+    if (is_8bit_word)
+        return hi.value();
+
+    low = binary_stream.read_byte();
+    if (!low.is_valid())
+        throw std::runtime_error("unexpected end of stream");
+
+    ex::range_check(hi.value(),  uint8_t(0), uint8_t(255));
+    ex::range_check(low.value(), uint8_t(0), uint8_t(255));
+
+    return { hi.value(), low.value() };
+}
+
+
+template<typename T>
+inline T parse_integer(ex::IInputStream& stream)
+{
+    std::string number = "";
+
+    while (auto b = stream.read_byte())
+    {
+        char c = char(b.value());
+
+        if (std::isspace(c)) continue;
+
+        number += c;
+        break;
+    }
+
+    if (!stream.is_valid() || stream.eos())
+        throw std::runtime_error("read error or EOS");
+
+    while (auto b = stream.read_byte())
+    {
+        char c = char(b.value());
+
+        if (std::isspace(c)) break;
+
+        number += c;
+    }
+
+    if (!stream.is_valid() || number.length() == 0)
+        throw std::runtime_error("read error");
+
+    int value = std::stoi(number);
+
+    return ex::range_check_cast<T>(value);
+}
+
+
+}
+}
+#endif //IMP_INTERNAL_READ_WORD_HEADER

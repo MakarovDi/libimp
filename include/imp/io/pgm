@@ -3,19 +3,19 @@
 
 
 #include <cstdint>
-#include <fstream>
-#include <ostream>
 #include <string>
 #include <limits>
 
-#include <ex/common/type>
-#include <ex/common/policy>
+#include <cctype>
+
 #include <ex/meta/math_type>
 #include <ex/encoding/word16>
 #include <ex/range_check>
+#include <ex/stream/file>
+#include <ex/stream/buffered>
 
 #include "imp/common/matrix"
-#include "imp/internal/read_word"
+#include "imp/internal/stream_tools"
 
 
 namespace imp
@@ -26,12 +26,11 @@ namespace pgm
 
 
 template <typename Image, typename T = typename Image::Scalar>
-static void save(std::ostream& binary_stream,
+static void save(ex::IOutputStream& binary_stream,
                  const IDenseObject<Image>& image,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
-    static_assert(Image::Flags & Eigen::RowMajor, "storage order must be RowMajor");
     static_assert(ex::math_type<T>::classify != ex::math_type<T>::kUserType, "type is not supported");
 
     index_t storage_size = 16;
@@ -53,22 +52,23 @@ static void save(std::ostream& binary_stream,
     const uint16_t pgm_max = uint16_t((1u << storage_size) - 1u);
 
     // header
-    binary_stream << "P5"        << std::endl;
-    binary_stream << image.cols() << " " << image.rows() << std::endl;
-    binary_stream << pgm_max     << std::endl;
+    binary_stream << "P5\n";
+    binary_stream << std::to_string(image.cols()) << " " << std::to_string(image.rows()) << "\n";
+    binary_stream << std::to_string(pgm_max) << "\n";
 
     T range = white_level - black_level;
 
     // content
-    for (index_t i = 0; i < image.size() ; ++i)
-    {
-        ex::range_check(image(i), black_level, white_level);
+    for (index_t y = 0; y < image.rows() ; ++y)
+        for (index_t x = 0; x < image.cols(); ++x)
+        {
+            ex::range_check(image(y, x), black_level, white_level);
 
-        ex::word16 v = uint16_t( std::round(pgm_max * float(image(i) - black_level) / range) );
+            ex::word16 v = uint16_t( std::round(pgm_max * float(image(y, x) - black_level) / range) );
 
-        if (storage_size == 16) binary_stream.put(v.hi);
-        binary_stream.put(v.low);
-    }
+            if (storage_size == 16) binary_stream.write_byte(v.hi);
+            binary_stream.write_byte(v.low);
+        }
 }
 
 
@@ -78,33 +78,26 @@ static void save(const char* file_name,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
-    std::ofstream pgm(file_name, std::ios_base::out | std::ios_base::binary);
+    ex::FileStream fs(file_name, ex::FileStream::kCreate, ex::FileStream::kWrite);
+    ex::OutputBufferedStream<ex::FileStream> bfs(fs);
 
-    if (!pgm.is_open())
-        throw std::runtime_error("failed to create file");
-
-    pgm::save(pgm, image, white_level, black_level);
+    pgm::save(bfs, image, white_level, black_level);
 };
 
 
 template <typename T>
-static Matrix<T> load(std::istream& binary_stream,
-                                  T white_level = std::numeric_limits<T>::max(),
-                                  T black_level = T(0))
+static Matrix<T> load(ex::IInputStream& binary_stream,
+                                      T white_level = std::numeric_limits<T>::max(),
+                                      T black_level = T(0))
 {
-    index_t  width;
-    index_t  height;
-    uint16_t pgm_range;
+    uint16_t signature = binary_stream.read<uint16_t>();
 
-    std::string signature;
-
-    binary_stream >> signature;
-    binary_stream >> width;
-    binary_stream >> height;
-    binary_stream >> pgm_range;
-
-    if (signature != "P5")
+    if (signature != 0x3550) // P5 signature
         throw std::runtime_error("file is not PGM (no P5 signature)");
+
+    index_t  width     = internal::parse_integer<index_t>(binary_stream);
+    index_t  height    = internal::parse_integer<index_t>(binary_stream);
+    uint16_t pgm_range = internal::parse_integer<uint16_t>(binary_stream);
 
     if (width < 0 || height < 0 || (pgm_range != 255 && pgm_range != 65535))
         throw std::runtime_error("wrong file format");
@@ -114,11 +107,9 @@ static Matrix<T> load(std::istream& binary_stream,
     bool is_8bit_file = (pgm_range <= 255);
     T    output_range = white_level - black_level;
 
-    binary_stream.get(); // skip single whitespace separator
-
     for (index_t i = 0; i < image.size(); ++i)
     {
-        ex::word16 r_word = imp::internal::read_word(binary_stream, is_8bit_file);
+        ex::word16 r_word = internal::read_word(binary_stream, is_8bit_file);
 
         float v = float(r_word) / pgm_range;
 
@@ -134,12 +125,10 @@ static Matrix<T> load(const char* file_name,
                                 T white_level = std::numeric_limits<T>::max(),
                                 T black_level = T(0))
 {
-    std::ifstream pgm(file_name, std::ios_base::in | std::ios_base::binary);
+    ex::FileStream fs(file_name, ex::FileStream::kOpenExisting, ex::FileStream::kRead);
+    ex::InputBufferedStream<ex::FileStream> bfs(fs);
 
-    if (!pgm.is_open())
-        throw std::runtime_error("can't open file");
-
-    return pgm::load<T>(pgm, white_level, black_level);
+    return pgm::load<T>(bfs, white_level, black_level);
 }
 
 

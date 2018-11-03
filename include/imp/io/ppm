@@ -3,8 +3,6 @@
 
 
 #include <cstdint>
-#include <fstream>
-#include <ostream>
 #include <string>
 
 #include <ex/common/type>
@@ -12,9 +10,11 @@
 #include <ex/meta/math_type>
 #include <ex/encoding/word16>
 #include <ex/range_check>
+#include <ex/stream/file>
+#include <ex/stream/buffered>
 
 #include "imp/image/rgb_image"
-#include "imp/internal/read_word"
+#include "imp/internal/stream_tools"
 
 
 
@@ -25,7 +25,7 @@ namespace ppm
 
 
 template <typename T>
-static void save(std::ostream& binary_stream,
+static void save(ex::IOutputStream& binary_stream,
                  const RgbImage<T>& rgb,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
@@ -51,9 +51,9 @@ static void save(std::ostream& binary_stream,
     const uint16_t ppm_max = uint16_t((1u << storage_size) - 1u);
 
     // header
-    binary_stream << "P6"        << std::endl;
-    binary_stream << rgb.width() << " " << rgb.height() << std::endl;
-    binary_stream << ppm_max     << std::endl;
+    binary_stream << "P6\n";
+    binary_stream << std::to_string(rgb.width()) << " " << std::to_string(rgb.height()) << "\n";
+    binary_stream << std::to_string(ppm_max) << "\n";
 
     T range = white_level - black_level;
 
@@ -68,14 +68,14 @@ static void save(std::ostream& binary_stream,
         ex::word16 g = uint16_t( std::round(ppm_max * float(rgb.g(i) - black_level) / range) );
         ex::word16 b = uint16_t( std::round(ppm_max * float(rgb.b(i) - black_level) / range) );
 
-        if (storage_size == 16) binary_stream.put(r.hi);
-        binary_stream.put(r.low);
+        if (storage_size == 16) binary_stream.write_byte(r.hi);
+        binary_stream.write_byte(r.low);
 
-        if (storage_size == 16) binary_stream.put(g.hi);
-        binary_stream.put(g.low);
+        if (storage_size == 16) binary_stream.write_byte(g.hi);
+        binary_stream.write_byte(g.low);
 
-        if (storage_size == 16) binary_stream.put(b.hi);
-        binary_stream.put(b.low);
+        if (storage_size == 16) binary_stream.write_byte(b.hi);
+        binary_stream.write_byte(b.low);
     }
 }
 
@@ -86,33 +86,25 @@ static void save(const char* file_name,
                  T white_level = std::numeric_limits<T>::max(),
                  T black_level = T(0))
 {
-    std::ofstream ppm(file_name, std::ios_base::out | std::ios_base::binary);
+    ex::FileStream fs(file_name, ex::FileStream::kCreate, ex::FileStream::kWrite);
+    ex::OutputBufferedStream<ex::FileStream> bfs(fs);
 
-    if (!ppm.is_open())
-        throw std::runtime_error("failed to create file");
-
-    ppm::save(ppm, rgb, white_level, black_level);
+    ppm::save(bfs, rgb, white_level, black_level);
 };
 
 
 template <typename T>
-static RgbImage<T> load(std::istream& binary_stream,
-                                    T white_level = std::numeric_limits<T>::max(),
-                                    T black_level = T(0))
+static RgbImage<T> load(ex::IInputStream& binary_stream,
+                                        T white_level = std::numeric_limits<T>::max(),
+                                        T black_level = T(0))
 {
-    index_t  width;
-    index_t  height;
-    uint16_t ppm_range;
-
-    std::string signature;
-
-    binary_stream >> signature;
-    binary_stream >> width;
-    binary_stream >> height;
-    binary_stream >> ppm_range;
-
-    if (signature != "P6")
+    uint16_t signature = binary_stream.read<uint16_t>();
+    if (signature != 0x3650)
         throw std::runtime_error("file is not PPM (no P6 signature)");
+
+    index_t  width     = internal::parse_integer<index_t>(binary_stream);
+    index_t  height    = internal::parse_integer<index_t>(binary_stream);
+    uint16_t ppm_range = internal::parse_integer<uint16_t>(binary_stream);
 
     if (width < 0 || height < 0 || (ppm_range != 255 && ppm_range != 65535))
         throw std::runtime_error("wrong file format");
@@ -121,8 +113,6 @@ static RgbImage<T> load(std::istream& binary_stream,
 
     bool is_8bit_ppm = ppm_range == 255;
     T    output_range = white_level - black_level;
-
-    binary_stream.get(); // skip single whitespace separator
 
     for (index_t i = 0; i < image.plane_size(); ++i)
     {
@@ -148,12 +138,10 @@ static RgbImage<T> load(const char* file_name,
                                   T white_level = std::numeric_limits<T>::max(),
                                   T black_level = T(0))
 {
-    std::ifstream ppm(file_name, std::ios_base::in | std::ios_base::binary);
+    ex::FileStream fs(file_name, ex::FileStream::kOpenExisting, ex::FileStream::kRead);
+    ex::InputBufferedStream<ex::FileStream> bfs(fs);
 
-    if (!ppm.is_open())
-        throw std::runtime_error("can't open file");
-
-    return ppm::load<T>(ppm, white_level, black_level);
+    return ppm::load<T>(bfs, white_level, black_level);
 }
 
 

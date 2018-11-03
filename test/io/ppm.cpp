@@ -1,22 +1,17 @@
 #include <gtest/gtest.h>
 
-#include <sstream>
+#include <ex/stream/memory>
 #include <imp/io/ppm>
 
 
 template <index_t N>
-bool check_stream(std::ostringstream& stream, const int (&against)[N])
+bool check_stream(ex::MemoryStream& stream, const int (&against)[N])
 {
-    const std::string buffer = stream.str();
-
-    if (buffer.length() != N)
-        return false;
-
-    const char* buf = buffer.c_str();
+    if (stream.position() != N) return false;
 
     for (index_t i = 0; i < N; ++i)
     {
-        if (buf[i] != char(against[i]))
+        if (stream.data()[i] != against[i])
             return false;
     }
 
@@ -38,7 +33,8 @@ TEST(ppm_test, color_order)
           { 32, 32 }, }
     });
 
-    std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img, 32);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32, 0x35, 0x35, 0x0a, 0x80,
@@ -48,7 +44,7 @@ TEST(ppm_test, color_order)
                       { 64, 64 } };
 
 
-    stream.seekp(0);
+    stream.seek(0);
     imp::ppm::save(stream, img, 64);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32, 0x35, 0x35, 0x0a, 0xff,
                                        0x40, 0x80, 0xff, 0x40, 0x80, 0xff, 0x40, 0x80, 0xff, 0x40, 0x80 }));
@@ -56,7 +52,7 @@ TEST(ppm_test, color_order)
     img.g_plane() = { { 128, 128 },
                       { 128, 128 } };
 
-    stream.seekp(0);
+    stream.seek(0);
     imp::ppm::save(stream, img, 128);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32, 0x35, 0x35, 0x0a, 0x80,
                                        0xff, 0x40, 0x80, 0xff, 0x40, 0x80, 0xff, 0x40, 0x80, 0xff, 0x40 }));
@@ -77,7 +73,8 @@ TEST(ppm_test, float_ppm)
           { 32.0, 32.0 }, }
     });
 
-    std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img, 32.0);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x36, 0x35, 0x35, 0x33, 0x35, 0x0a, 0x80, 0x00,
@@ -100,7 +97,8 @@ TEST(ppm_test, ppm16_bit)
           { 32, 32, 32 }, }
     });
 
-    std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img, 1600);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x33, 0x20, 0x32, 0x0a, 0x36, 0x35, 0x35, 0x33,
@@ -125,9 +123,8 @@ TEST(ppm_test, ppm8_bit)
           { 32, 32 }, }
     });
 
-    std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
-
-
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img, 255);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32, 0x35, 0x35, 0x0a,
@@ -149,7 +146,8 @@ TEST(ppm_test, black_level)
           { 32, 32 }, }
     });
 
-    std::ostringstream stream(std::ios_base::out | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img, 255, 16);
     ASSERT_TRUE(check_stream(stream, { 0x50, 0x36, 0x0a, 0x32, 0x20, 0x32, 0x0a, 0x32, 0x35, 0x35, 0x0a,
@@ -171,11 +169,12 @@ TEST(ppm_test, load_8bit_ppm)
           { 32, 32 }, }
     });
 
-    std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img1, 32);
 
-    stream.seekp(0);
+    stream.seek(0);
 
     auto img2 = imp::ppm::load<int>(stream, 32);
 
@@ -197,11 +196,12 @@ TEST(ppm_test, load_float)
           { 32.0, 32.0 }, }
     });
 
-    std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img1, 32.0);
 
-    stream.seekp(0);
+    stream.seek(0);
 
     auto img2 = imp::ppm::load<double>(stream, 32.0);
 
@@ -224,11 +224,12 @@ TEST(ppm_test, load_16bit_ppm)
     });
 
 
-    std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img1, 1600);
 
-    stream.seekp(0);
+    stream.seek(0);
 
     auto img2 = imp::ppm::load<int>(stream, 1600);
 
@@ -251,11 +252,12 @@ TEST(ppm_test, load_with_black_level)
     });
 
 
-    std::stringstream stream(std::ios_base::out | std::ios_base::in | std::ios_base::binary);
+    std::unique_ptr<uint8_t[]> data(new uint8_t[256]);
+    ex::MemoryStream stream(data.get(), 256);
 
     imp::ppm::save(stream, img1, 255, 16);
 
-    stream.seekp(0);
+    stream.seek(0);
 
     auto img2 = imp::ppm::load<int>(stream, 255, 16);
 
