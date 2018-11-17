@@ -10,57 +10,65 @@ namespace imp
 {
 
 
-namespace internal
-{
-
-    template <typename T>
-    using ReduceFunction = T (*)(const T& c0, const T& c1, const T& c2);
-
-
-    template <typename T, typename Alias>
-    Matrix<T> color_reduce(const Image<T, Alias>& image, ReduceFunction<T> reduce)
-    {
-        using ColorPlane = typename Image<T, Alias>::ColorPlane;
-
-        Matrix<T> result(image.width(), image.height());
-
-        for (index_t i = 0; i < image.width()*image.height(); ++i)
-        {
-            T c0 = image(i, ColorPlane(0));
-            T c1 = image(i, ColorPlane(1));
-            T c2 = image(i, ColorPlane(2));
-
-            result(i) = reduce( c0, c1, c2 );
-        }
-
-        return result;
-    }
-
-}
-
-
 template <typename T, typename Alias>
 Matrix<T> min(const Image<T, Alias>& image)
 {
-    internal::ReduceFunction<T> reduce_min = [](const T& c0, const T& c1, const T& c2)
-    {
-        return std::min(c0, std::min(c1, c2) );
-    };
-
-    return internal::color_reduce(image, reduce_min);
+    return image.min();
 }
 
 
 template <typename T, typename Alias>
 Matrix<T> max(const Image<T, Alias>& image)
 {
-    internal::ReduceFunction<T> reduce_max = [](const T& c0, const T& c1, const T& c2)
-    {
-        return std::max(c0, std::max(c1, c2) );
-    };
-
-    return internal::color_reduce(image, reduce_max);
+    return image.max();
 }
+
+
+template <typename T>
+Matrix<T> clamp(const Matrix<T>& matrix, const T& max_value)
+{
+    Matrix<T> clamped(matrix.rows(), matrix.cols());
+
+    clamped.array() = (matrix.array() > max_value).select(max_value, matrix.array());
+
+    return clamped;
+}
+
+
+template <typename T, typename Alias>
+Image<T, Alias> clamp(const Image<T, Alias>& image, const T& max_value)
+{
+    Image<T, Alias> clamped(image.height(), image.width());
+
+    clamped.array() = (image.array() > max_value).select(max_value, image.array());
+
+    return clamped;
+}
+
+
+template <typename T>
+Matrix<T> clip(const Matrix<T>& matrix, const T& min_value, const T& max_value)
+{
+    Matrix<T> clipped(matrix.rows(), matrix.cols());
+
+    clipped.array() = (matrix.array() > max_value).select(max_value,
+                      (matrix.array() < min_value).select(min_value, matrix.array()));
+
+    return clipped;
+}
+
+
+template <typename T, typename Alias>
+Image<T, Alias> clip(const Image<T, Alias>& image, const T& min_value, const T& max_value)
+{
+    Image<T, Alias> clipped(image.height(), image.width());
+
+    clipped.array() = (image.array() > max_value).select(max_value,
+                      (image.array() < min_value).select(min_value, image.array()));
+
+    return clipped;
+}
+
 
 
 

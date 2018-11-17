@@ -158,6 +158,9 @@ public:
     const T* data()       const { return m_pointer; }
           T* data()             { return m_pointer; }
 
+    const FlattenView<T> array() const { return FlattenView<T>(m_pointer, size()); }
+          FlattenView<T> array()       { return FlattenView<T>(m_pointer, size()); }
+
 public:
     using ColorPlane = typename Facade::ColorPlane;
 
@@ -180,7 +183,44 @@ public:
     // note: map will not change pointer inside on assigment
     const PlaneView<T> plane(index_t plane_index) const { return PlaneView<T>(m_pointer + plane_index*plane_size(), height(), width()); }
           PlaneView<T> plane(index_t plane_index)       { return PlaneView<T>(m_pointer + plane_index*plane_size(), height(), width()); }
-          
+
+public:
+    Image clone() const { return Image(*this); }
+
+
+    Matrix<T> min() const
+    {
+        auto& plane0 = plane(0);
+        auto& plane1 = plane(1);
+        auto& plane2 = plane(2);
+
+        return plane0.cwiseMin(plane1).cwiseMin(plane2);
+    }
+
+
+    Matrix<T> max() const
+    {
+        auto& plane0 = plane(0);
+        auto& plane1 = plane(1);
+        auto& plane2 = plane(2);
+
+        return plane0.cwiseMax(plane1).cwiseMax(plane2);
+    }
+
+
+    void clamp(const T& max_value)
+    {
+        array() = (array() > max_value).select(max_value, array());
+    }
+
+
+    void clip(const T& min_value, const T& max_value)
+    {
+        array() = (array() > max_value).select(max_value,
+                  (array() < min_value).select(min_value, array()));
+    }
+
+
 private:
     static void copy_array(const T* src_data, T* dst_data, index_t size)
     {

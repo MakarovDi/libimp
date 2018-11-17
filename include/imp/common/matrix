@@ -66,6 +66,14 @@ template
 using RowVector = Eigen::Matrix<T, 1, Cols, Eigen::RowMajor, 1, MaxCols>;
 
 
+template
+<
+    typename T,
+    int Cols = Eigen::Dynamic,
+    int MaxCols = Cols
+>
+using RowArray = Eigen::Array<T, 1, Cols, Eigen::RowMajor, 1, MaxCols>;
+
 
 template
 <
