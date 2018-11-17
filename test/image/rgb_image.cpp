@@ -381,8 +381,8 @@ TYPED_TEST(rgb_image, planes_access)
 
     RgbImage<T> img(2, 3, ptr, RawMemory::kMap);
 
-    const ImagePlane<T>& r_mx = img.r_plane();
-          ImagePlane<T>& r1   = img.r_plane();
+    const PlaneView<T> r_mx = img.r_plane();
+          PlaneView<T> r1   = img.r_plane();
 
     ASSERT_TRUE(r_mx.data() == r1.data());
     ASSERT_TRUE(r1.data() == ptr);
